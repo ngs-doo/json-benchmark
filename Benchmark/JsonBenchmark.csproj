@@ -38,8 +38,11 @@
     <Reference Include="Jil">
       <HintPath>lib\Jil.dll</HintPath>
     </Reference>
+    <Reference Include="NetJSON">
+      <HintPath>lib\NetJSON.dll</HintPath>
+    </Reference>
     <Reference Include="Newtonsoft.Json">
-      <HintPath>dependencies\Server\Newtonsoft.Json.dll</HintPath>
+      <HintPath>lib\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="Revenj.Core">
       <HintPath>dependencies\Server\Revenj.Core.dll</HintPath>

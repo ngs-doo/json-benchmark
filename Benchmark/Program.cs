@@ -16,7 +16,7 @@ namespace JsonBenchmark
 	{
 		enum BenchTarget
 		{
-			RevenjJson, ServiceStack, Jil, JsonNet, RevenjProtoBuf
+			RevenjJson, ServiceStack, Jil, JsonNet, RevenjProtoBuf, NetJSON
 		}
 
 		enum BenchSize
@@ -31,7 +31,7 @@ namespace JsonBenchmark
 
 		static void Main(string[] args)
 		{
-			//args = new[] { "ServiceStack", "Small", "Both", "1" };
+			//args = new[] { "NetJSON", "Small", "Serialization", "1" };
 			if (args.Length != 4)
 			{
 				Console.WriteLine(
@@ -81,6 +81,9 @@ namespace JsonBenchmark
 				case BenchTarget.RevenjProtoBuf:
 					SetupRevenj(out serialize, out deserialize, true);
 					break;
+				case BenchTarget.NetJSON:
+					SetupNetJSON(out serialize, out deserialize);
+					break;
 				default:
 					SetupRevenj(out serialize, out deserialize, false);
 					break;
@@ -92,11 +95,12 @@ namespace JsonBenchmark
 					{
 						TestSmall(repeat, serialize, deserialize, type);
 					}
-					catch
+					catch (Exception ex)
 					{
 						ReportStatsAndRestart(null, null, repeat);
 						ReportStatsAndRestart(null, null, repeat);
 						ReportStatsAndRestart(null, null, repeat);
+						Console.WriteLine(ex.ToString());
 					}
 					break;
 				case BenchSize.Standard:
@@ -104,10 +108,11 @@ namespace JsonBenchmark
 					{
 						TestStandard(repeat, serialize, deserialize, type);
 					}
-					catch
+					catch (Exception ex)
 					{
 						ReportStatsAndRestart(null, null, repeat);
 						ReportStatsAndRestart(null, null, repeat);
+						Console.WriteLine(ex.ToString());
 					}
 					break;
 				default:
@@ -115,9 +120,10 @@ namespace JsonBenchmark
 					{
 						TestLarge(repeat, serialize, deserialize, type);
 					}
-					catch
+					catch (Exception ex)
 					{
 						ReportStatsAndRestart(null, null, repeat);
+						Console.WriteLine(ex.ToString());
 					}
 					break;
 			}
@@ -388,6 +394,17 @@ namespace JsonBenchmark
 				sw.Flush();
 			};
 			deserialize = (stream, type) => Jil.JSON.Deserialize(new StreamReader(stream), type);
+		}
+
+		static void SetupNetJSON(out Action<object, Stream> serialize, out Func<Stream, Type, object> deserialize)
+		{
+			serialize = (obj, stream) =>
+			{
+				var sw = new StreamWriter(stream);
+				sw.Write(NetJSON.NetJSON.Serialize(obj));
+				sw.Flush();
+			};
+			deserialize = (stream, type) => NetJSON.NetJSON.Deserialize(type, new StreamReader(stream).ReadToEnd());
 		}
 	}
 }
