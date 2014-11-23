@@ -1,6 +1,8 @@
 ﻿module StandardObjects {
-	event DeletePost {
-		Post post;
+	value DeletePost {
+		int postID;
+		timestamp lastModified;
+		long deletedBy;
 		string? reason;
 	}
 	enum PostState {

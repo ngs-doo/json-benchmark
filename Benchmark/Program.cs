@@ -1,14 +1,13 @@
-﻿using System;
+﻿using Revenj.DomainPatterns;
+using Revenj.Serialization;
+using Revenj.Utility;
+using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Diagnostics;
-using System.IO;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters;
 using System.Text;
-using Revenj.DomainPatterns;
-using Revenj.Serialization;
-using Revenj.Utility;
 
 namespace JsonBenchmark
 {
@@ -16,7 +15,7 @@ namespace JsonBenchmark
 	{
 		enum BenchTarget
 		{
-			RevenjJson, ServiceStack, Jil, JsonNet, RevenjProtoBuf, NetJSON
+			BakedInFull, BakedInMinimal, ProtoBuf, NewtonsoftJson
 		}
 
 		enum BenchSize
@@ -31,7 +30,7 @@ namespace JsonBenchmark
 
 		static void Main(string[] args)
 		{
-			//args = new[] { "NetJSON", "Small", "Serialization", "1" };
+			//args = new[] { "NewtonsoftJson", "Small", "Both", "1" };
 			if (args.Length != 4)
 			{
 				Console.WriteLine(
@@ -65,27 +64,21 @@ namespace JsonBenchmark
 				Console.WriteLine("Invalid repeat parameter: " + args[3]);
 				return;
 			}
-			Action<object, Stream> serialize;
-			Func<Stream, Type, object> deserialize;
+			Action<object, ChunkedMemoryStream> serialize;
+			Func<ChunkedMemoryStream, Type, object> deserialize;
 			switch (target)
 			{
-				case BenchTarget.JsonNet:
-					SetupJsonNet(out serialize, out deserialize);
+				case BenchTarget.NewtonsoftJson:
+					SetupNewtonsoftJson(out serialize, out deserialize);
 					break;
-				case BenchTarget.Jil:
-					SetupJil(out serialize, out deserialize);
+				case BenchTarget.ProtoBuf:
+					SetupRevenj(out serialize, out deserialize, "application/x-protobuf");
 					break;
-				case BenchTarget.ServiceStack:
-					SetupServiceStack(out serialize, out deserialize);
-					break;
-				case BenchTarget.RevenjProtoBuf:
-					SetupRevenj(out serialize, out deserialize, true);
-					break;
-				case BenchTarget.NetJSON:
-					SetupNetJSON(out serialize, out deserialize);
+				case BenchTarget.BakedInFull:
+					SetupRevenj(out serialize, out deserialize, "application/json");
 					break;
 				default:
-					SetupRevenj(out serialize, out deserialize, false);
+					SetupRevenj(out serialize, out deserialize, "application/json;minimal");
 					break;
 			}
 			switch (size)
@@ -97,9 +90,10 @@ namespace JsonBenchmark
 					}
 					catch (Exception ex)
 					{
-						ReportStatsAndRestart(null, null, repeat);
-						ReportStatsAndRestart(null, null, repeat);
-						ReportStatsAndRestart(null, null, repeat);
+						ReportStatsAndRestart(null, -1, repeat);
+						ReportStatsAndRestart(null, -1, repeat);
+						ReportStatsAndRestart(null, -1, repeat);
+						Console.WriteLine("error");
 						Console.WriteLine(ex.ToString());
 					}
 					break;
@@ -110,8 +104,9 @@ namespace JsonBenchmark
 					}
 					catch (Exception ex)
 					{
-						ReportStatsAndRestart(null, null, repeat);
-						ReportStatsAndRestart(null, null, repeat);
+						ReportStatsAndRestart(null, -1, repeat);
+						ReportStatsAndRestart(null, -1, repeat);
+						Console.WriteLine("error");
 						Console.WriteLine(ex.ToString());
 					}
 					break;
@@ -122,51 +117,55 @@ namespace JsonBenchmark
 					}
 					catch (Exception ex)
 					{
-						ReportStatsAndRestart(null, null, repeat);
+						ReportStatsAndRestart(null, -1, repeat);
+						Console.WriteLine("error");
 						Console.WriteLine(ex.ToString());
 					}
 					break;
 			}
 		}
 
-		static void ReportStatsAndRestart(Stopwatch sw, Stream stream, int incorrect)
+		static void ReportStatsAndRestart(Stopwatch sw, long size, int incorrect)
 		{
 			Console.WriteLine("duration = " + (sw != null ? sw.ElapsedMilliseconds : -1));
-			Console.WriteLine("size = " + (stream != null ? stream.Position : -1));
+			Console.WriteLine("size = " + size);
 			Console.WriteLine("invalid deserialization = " + incorrect);
 			if (sw != null)
 				sw.Restart();
 		}
 
-		static void TestSmall(int repeat, Action<object, Stream> serialize, Func<Stream, Type, object> deserialize, BenchType type)
+		static void TestSmall(int repeat, Action<object, ChunkedMemoryStream> serialize, Func<ChunkedMemoryStream, Type, object> deserialize, BenchType type)
 		{
-			var ms = new MemoryStream();
+			var ms = new ChunkedMemoryStream();
 			var sw = Stopwatch.StartNew();
 			int incorrect = 0;
+			long size = 0;
 			for (int i = 0; i < repeat; i++)
 			{
 				ms.SetLength(0);
-				var message = new SmallObjects.Message { message = "some message " + i };
+				var message = new SmallObjects.Message { message = "some message " + i, version = i };
 				serialize(message, ms);
+				size += ms.Position;
 				if (type == BenchType.Both)
 				{
 					ms.Position = 0;
 					var deser = (SmallObjects.Message)deserialize(ms, typeof(SmallObjects.Message));
-					if (message.URI != deser.URI || message.message != deser.message
-						|| message.ProcessedAt != deser.ProcessedAt || message.QueuedAt != deser.QueuedAt)
+					if (!message.Equals(deser))
 					{
 						incorrect++;
 						//throw new SerializationException("not equal");
 					}
 				}
 			}
-			ReportStatsAndRestart(sw, ms, incorrect);
+			ReportStatsAndRestart(sw, size, incorrect);
+			size = 0;
 			incorrect = 0;
 			for (int i = 0; i < repeat; i++)
 			{
 				ms.SetLength(0);
 				var complex = new SmallObjects.Complex { x = i, y = -i };
 				serialize(complex, ms);
+				size += ms.Position;
 				if (type == BenchType.Both)
 				{
 					ms.Position = 0;
@@ -178,13 +177,15 @@ namespace JsonBenchmark
 					}
 				}
 			}
-			ReportStatsAndRestart(sw, ms, incorrect);
+			ReportStatsAndRestart(sw, size, incorrect);
+			size = 0;
 			incorrect = 0;
 			for (int i = 0; i < repeat; i++)
 			{
 				ms.SetLength(0);
 				var post = new SmallObjects.Post { text = "some text for post " + i, title = "some title " + i, created = DateTime.Today.AddMinutes(i).Date };
 				serialize(post, ms);
+				size += ms.Position;
 				if (type == BenchType.Both)
 				{
 					ms.Position = 0;
@@ -196,58 +197,42 @@ namespace JsonBenchmark
 					}
 				}
 			}
-			ReportStatsAndRestart(sw, ms, incorrect);
+			ReportStatsAndRestart(sw, size, incorrect);
 		}
 
-		static void TestStandard(int repeat, Action<object, Stream> serialize, Func<Stream, Type, object> deserialize, BenchType type)
+		static void TestStandard(int repeat, Action<object, ChunkedMemoryStream> serialize, Func<ChunkedMemoryStream, Type, object> deserialize, BenchType type)
 		{
 			var ms = new ChunkedMemoryStream();
-			var sw = Stopwatch.StartNew();
 			int incorrect = 0;
+			long size = 0;
+			var now = DateTime.Now;
+			var sw = Stopwatch.StartNew();
 			for (int i = 0; i < repeat; i++)
 			{
 				ms.SetLength(0);
-				var post = new StandardObjects.Post
-				{
-					approved = DateTime.Now.AddMilliseconds(i),
-					votes = new StandardObjects.Vote { downvote = i / 3, upvote = i / 2 },
-					text = "some text describing post " + i,
-					title = "post title " + i,
-					state = (StandardObjects.PostState)(i % 3)
-				};
-				for (int j = 0; j < i % 100; j++)
-				{
-					post.comments.Add(
-						new StandardObjects.Comment
-						{
-							message = "comment number " + i + " for " + j,
-							votes = new StandardObjects.Vote { upvote = j, downvote = j * 2 },
-							PostID = post.ID, //TODO: we should not be updating this, but since it's never persisted, it never gets updated
-							Index = j
-						});
-				}
-				var delete = new StandardObjects.DeletePost { post = post, reason = "no reason" };
+				var delete = new StandardObjects.DeletePost { postID = i, deletedBy = i / 100, lastModified = now.AddSeconds(i), reason = "no reason" };
 				serialize(delete, ms);
+				size += ms.Position;
 				if (type == BenchType.Both)
 				{
 					ms.Position = 0;
 					var deser = (StandardObjects.DeletePost)deserialize(ms, typeof(StandardObjects.DeletePost));
-					if (delete.URI != deser.URI || delete.reason != deser.reason || !delete.post.Equals(deser.post)
-						|| delete.ProcessedAt != deser.ProcessedAt || delete.QueuedAt != deser.QueuedAt)
+					if (!delete.Equals(deser))
 					{
 						incorrect++;
 						//throw new SerializationException("not equal");
 					}
 				}
 			}
-			ReportStatsAndRestart(sw, ms, incorrect);
+			ReportStatsAndRestart(sw, size, incorrect);
+			size = 0;
 			incorrect = 0;
 			for (int i = 0; i < repeat; i++)
 			{
 				ms.SetLength(0);
 				var post = new StandardObjects.Post
 				{
-					approved = DateTime.Now.AddMilliseconds(i),
+					approved = now.AddMilliseconds(i),
 					votes = new StandardObjects.Vote { downvote = i / 3, upvote = i / 2 },
 					text = "some text describing post " + i,
 					title = "post title " + i,
@@ -260,7 +245,7 @@ namespace JsonBenchmark
 						{
 							message = "comment number " + i + " for " + j,
 							votes = new StandardObjects.Vote { upvote = j, downvote = j * 2 },
-							approved = j % 2 == 0 ? null : (DateTime?)DateTime.Now.AddMilliseconds(i),
+							approved = j % 2 == 0 ? null : (DateTime?)now.AddMilliseconds(i),
 							state = (StandardObjects.CommentState)(j % 3),
 							user = "some random user " + i,
 							PostID = post.ID, //TODO: we should not be updating this, but since it's never persisted, it never gets updated
@@ -268,6 +253,7 @@ namespace JsonBenchmark
 						});
 				}
 				serialize(post, ms);
+				size += ms.Position;
 				if (type == BenchType.Both)
 				{
 					ms.Position = 0;
@@ -279,21 +265,23 @@ namespace JsonBenchmark
 					}
 				}
 			}
-			ReportStatsAndRestart(sw, ms, incorrect);
+			ReportStatsAndRestart(sw, size, incorrect);
 		}
 
-		static void TestLarge(int repeat, Action<object, Stream> serialize, Func<Stream, Type, object> deserialize, BenchType type)
+		static void TestLarge(int repeat, Action<object, ChunkedMemoryStream> serialize, Func<ChunkedMemoryStream, Type, object> deserialize, BenchType type)
 		{
 			var ms = new ChunkedMemoryStream();
-			var sw = Stopwatch.StartNew();
 			var illustrations = new List<byte[]>();
 			var rnd = new Random(1);
+			var now = DateTime.Now;
+			long size = 0;
 			for (int i = 0; i < 10; i++)
 			{
-				var buf = new byte[2096 * i * i];
+				var buf = new byte[256 * i * i * i];
 				rnd.NextBytes(buf);
 				illustrations.Add(buf);
 			}
+			var sw = Stopwatch.StartNew();
 			int incorrect = 0;
 			for (int i = 0; i < repeat; i++)
 			{
@@ -301,15 +289,18 @@ namespace JsonBenchmark
 				var book = new LargeObjects.Book
 				{
 					authorId = i / 100,
-					published = i % 3 == 0 ? null : (DateTime?)DateTime.Now.AddMinutes(i).Date,
+					published = i % 3 == 0 ? null : (DateTime?)now.AddMinutes(i).Date,
 					title = "book title " + i
 				};
+				var genres = new List<LargeObjects.Genre>();
+				for (int j = 0; j < i % 2; j++)
+					genres.Add((LargeObjects.Genre)((i + j) % 4));
+				book.genres = genres.ToArray();
 				for (int j = 0; j < i % 20; j++)
-					book.changes.Add(DateTime.Now.AddMinutes(i).Date);
+					book.changes.Add(now.AddMinutes(i).Date);
 				for (int j = 0; j < i % 50; j++)
 					book.metadata["key " + i + j] = "value " + i + j;
-				if (i % 2 == 0) book.frontCover = illustrations[i % illustrations.Count];
-				if (i % 3 == 0) book.backCover = illustrations[i % illustrations.Count];
+				if (i % 3 == 0 || i % 7 == 0) book.cover = illustrations[i % illustrations.Count];
 				var sb = new StringBuilder();
 				for (int j = 0; j < i % 100; j++)
 				{
@@ -321,20 +312,21 @@ namespace JsonBenchmark
 						BookID = book.ID, //TODO: we should not be updating this, but since it's never persisted, it never gets updated
 						Index = j
 					};
-					for (int z = 0; z < i % 10; z++)
-					{
-						page.illustrations.Add(illustrations[z]);
-					}
 					for (int z = 0; z < i % 100; z++)
 					{
+						LargeObjects.Note note;
 						if (z % 3 == 0)
-							page.notes.Add(new LargeObjects.Headnote { modifiedAt = DateTime.Now.AddSeconds(i), note = "headnote " + j + " at " + z });
+							note = new LargeObjects.Headnote { modifiedAt = now.AddSeconds(i), note = "headnote " + j + " at " + z };
 						else
-							page.notes.Add(new LargeObjects.Footnote { createadAt = DateTime.Now.AddSeconds(i), note = "footnote " + j + " at " + z, index = i });
+							note = new LargeObjects.Footnote { createadAt = now.AddSeconds(i), note = "footnote " + j + " at " + z, index = i };
+						if (z % 3 == 0)
+							note.writtenBy = "author " + j + " " + z;
+						page.notes.Add(note);
 					}
-					book.pages.Add(page);
+					book.pages.AddLast(page);
 				}
 				serialize(book, ms);
+				size += ms.Position;
 				if (type == BenchType.Both)
 				{
 					ms.Position = 0;
@@ -346,65 +338,29 @@ namespace JsonBenchmark
 					}
 				}
 			}
-			ReportStatsAndRestart(sw, ms, incorrect);
+			ReportStatsAndRestart(sw, size, incorrect);
 		}
 
-		static void SetupRevenj(out Action<object, Stream> serialize, out Func<Stream, Type, object> deserialize, bool protobuf)
+		static void SetupRevenj(out Action<object, ChunkedMemoryStream> serialize, out Func<ChunkedMemoryStream, Type, object> deserialize, string contentType)
 		{
-			var contentType = protobuf ? "application/x-protobuf" : "application/json";
 			IServiceLocator locator = DSL.Core.SetupPostgres(ConfigurationManager.AppSettings["ConnectionString"]);
 			IWireSerialization serialization = locator.Resolve<IWireSerialization>();
 			serialize = (obj, stream) => serialization.Serialize(obj, contentType, stream);
 			deserialize = (stream, type) => serialization.Deserialize(stream, type, contentType, default(StreamingContext));
 		}
 
-		static void SetupJsonNet(out Action<object, Stream> serialize, out Func<Stream, Type, object> deserialize)
+		static void SetupNewtonsoftJson(out Action<object, ChunkedMemoryStream> serialize, out Func<ChunkedMemoryStream, Type, object> deserialize)
 		{
 			var serializer = new Newtonsoft.Json.JsonSerializer();
 			serializer.TypeNameAssemblyFormat = FormatterAssemblyStyle.Simple;
 			serializer.TypeNameHandling = Newtonsoft.Json.TypeNameHandling.Auto;
 			serialize = (obj, stream) =>
 			{
-				var sw = new StreamWriter(stream);
+				var sw = stream.GetWriter();
 				serializer.Serialize(sw, obj);
 				sw.Flush();
 			};
-			deserialize = (stream, type) => serializer.Deserialize(new StreamReader(stream), type);
-		}
-
-		static void SetupServiceStack(out Action<object, Stream> serialize, out Func<Stream, Type, object> deserialize)
-		{
-			serialize = (obj, stream) =>
-			{
-				var sw = new StreamWriter(stream);
-				ServiceStack.Text.TypeSerializer.SerializeToWriter(obj, sw);
-				sw.Flush();
-			};
-			deserialize = (stream, type) => ServiceStack.Text.TypeSerializer.DeserializeFromReader(new StreamReader(stream), type);
-		}
-
-		static void SetupJil(out Action<object, Stream> serialize, out Func<Stream, Type, object> deserialize)
-		{
-			//serialize = null;
-			//deserialize = null;
-			serialize = (obj, stream) =>
-			{
-				var sw = new StreamWriter(stream);
-				Jil.JSON.Serialize(obj, sw);
-				sw.Flush();
-			};
-			deserialize = (stream, type) => Jil.JSON.Deserialize(new StreamReader(stream), type);
-		}
-
-		static void SetupNetJSON(out Action<object, Stream> serialize, out Func<Stream, Type, object> deserialize)
-		{
-			serialize = (obj, stream) =>
-			{
-				var sw = new StreamWriter(stream);
-				sw.Write(NetJSON.NetJSON.Serialize(obj));
-				sw.Flush();
-			};
-			deserialize = (stream, type) => NetJSON.NetJSON.Deserialize(type, new StreamReader(stream).ReadToEnd());
+			deserialize = (stream, type) => serializer.Deserialize(stream.GetReader(), type);
 		}
 	}
 }

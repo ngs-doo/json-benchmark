@@ -7,19 +7,27 @@ namespace GatherResults
 {
 	class Program
 	{
-		private static string BenchExe = @"..\..\..\Benchmark\bin\Release\JsonBenchmark.exe";
+		private static string BenchPath = "../../../app";
+		private static string JavaPath = @"C:\Program Files\Java\jdk1.7.0_21\bin";
 
 		static void Main(string[] args)
 		{
-			if (args.Length > 0) BenchExe = args[0];
-			if (!File.Exists(BenchExe))
+			if (args.Length > 0) BenchPath = args[0];
+			bool exeExists = File.Exists(Path.Combine(BenchPath, "JsonBenchmark.exe"));
+			bool jarExists = File.Exists(Path.Combine(BenchPath, "json-benchmark.jar"));
+			if (!exeExists && !jarExists)
 			{
 				if (args.Length > 0 || !File.Exists("JsonBenchmark.exe"))
 				{
-					Console.WriteLine("Unable to find benchmark exe file: " + BenchExe);
+					Console.WriteLine("Unable to find benchmark exe file: JsonBenchmark.exe in" + BenchPath);
 					return;
 				}
-				BenchExe = "JsonBenchmark.exe";
+				if (args.Length > 0 || !File.Exists("json-benchmark.jar"))
+				{
+					Console.WriteLine("Unable to find benchmark jar file: json-benchmark.jar in" + BenchPath);
+					return;
+				}
+				BenchPath = ".";
 			}
 			int repeat = args.Length > 1 ? int.Parse(args[1]) : 10;
 			var startupSerialization = RunStartup(false, repeat);
@@ -38,16 +46,16 @@ namespace GatherResults
 					{
 						startupSerialization = startupSerialization,
 						startupBoth = startupBoth,
-						smallEventsSerialization = smallSerialization.Events,
-						smallValuesSerialization = smallSerialization.Values,
-						smallAggregatesSerialization = smallSerialization.Aggregates,
-						smallEventsBoth = smallBoth.Events,
-						smallValuesBoth = smallBoth.Values,
-						smallAggregatesBoth = smallBoth.Aggregates,
-						standardEventsSerialization = standardSerialization.Events,
-						standardAggregatesSerialization = standardSerialization.Aggregates,
-						standardEventsBoth = standardBoth.Events,
-						standardAggregatesBoth = standardBoth.Aggregates,
+						smallEventsSerialization = smallSerialization.Message,
+						smallValuesSerialization = smallSerialization.Complex,
+						smallAggregatesSerialization = smallSerialization.Post,
+						smallEventsBoth = smallBoth.Message,
+						smallValuesBoth = smallBoth.Complex,
+						smallAggregatesBoth = smallBoth.Post,
+						standardEventsSerialization = standardSerialization.DeletePost,
+						standardAggregatesSerialization = standardSerialization.Post,
+						standardEventsBoth = standardBoth.DeletePost,
+						standardAggregatesBoth = standardBoth.Post,
 						largeAggregatesSerialization = largeSerialization,
 						largeAggregatesBoth = largeBoth,
 					});
@@ -71,9 +79,9 @@ namespace GatherResults
 
 		class SmallTest
 		{
-			public List<Result> Events = new List<Result>();
-			public List<Result> Values = new List<Result>();
-			public List<Result> Aggregates = new List<Result>();
+			public List<Result> Message = new List<Result>();
+			public List<Result> Complex = new List<Result>();
+			public List<Result> Post = new List<Result>();
 		}
 
 		static SmallTest RunSmall(bool both, int times)
@@ -85,9 +93,9 @@ namespace GatherResults
 				var d = GetherDuration("Small", both, 100000);
 				Console.Write("...");
 				Console.Write(i + 1);
-				result.Events.Add(d.Extract(0));
-				result.Values.Add(d.Extract(1));
-				result.Aggregates.Add(d.Extract(2));
+				result.Message.Add(d.Extract(0));
+				result.Complex.Add(d.Extract(1));
+				result.Post.Add(d.Extract(2));
 			}
 			Console.WriteLine(" ... done");
 			return result;
@@ -95,8 +103,8 @@ namespace GatherResults
 
 		class StandardTest
 		{
-			public List<Result> Events = new List<Result>();
-			public List<Result> Aggregates = new List<Result>();
+			public List<Result> DeletePost = new List<Result>();
+			public List<Result> Post = new List<Result>();
 		}
 
 		static StandardTest RunStandard(bool both, int times)
@@ -108,8 +116,8 @@ namespace GatherResults
 				var d = GetherDuration("Standard", both, 10000);
 				Console.Write("...");
 				Console.Write(i + 1);
-				result.Events.Add(d.Extract(0));
-				result.Aggregates.Add(d.Extract(1));
+				result.DeletePost.Add(d.Extract(0));
+				result.Post.Add(d.Extract(1));
 			}
 			Console.WriteLine(" ... done");
 			return result;
@@ -131,17 +139,30 @@ namespace GatherResults
 
 		static AggregatePass GetherDuration(string type, bool both, int count)
 		{
-			var passNJ = RunSinglePass("JsonNet", type, both, count);
-			var passJil = RunSinglePass("Jil", type, both, count);
-			var passRJ = RunSinglePass("RevenjJson", type, both, count);
-			var passSS = RunSinglePass("ServiceStack", type, both, count);
-			var passRP = RunSinglePass("RevenjProtoBuf", type, both, count);
-			return new AggregatePass { JsonNet = passNJ, Jil = passJil, RevenjJson = passRJ, ServiceStack = passSS, RevenjProtobuf = passRP };
+			var NJ = RunSinglePass(true, "NewtonsoftJson", type, both, count);
+			var NBF = RunSinglePass(true, "BakedInFull", type, both, count);
+			var NBM = RunSinglePass(true, "BakedInMinimal", type, both, count);
+			var NP = RunSinglePass(true, "ProtoBuf", type, both, count);
+			var JJ = RunSinglePass(false, "Jackson", type, both, count);
+			var JBF = RunSinglePass(false, "BakedInFull", type, both, count);
+			var JBM = RunSinglePass(false, "BakedInMinimal", type, both, count);
+			return new AggregatePass
+			{
+				NewtonsoftJson = NJ,
+				NetBakedInFull = NBF,
+				NetBakedInMinimal = NBM,
+				Protobuf = NP,
+				Jackson = JJ,
+				JvmBakedInFull = JBF,
+				JvmBakedInMinimal = JBM
+			};
 		}
 
-		static List<Stats> RunSinglePass(string serializer, string type, bool both, int count)
+		static List<Stats> RunSinglePass(bool exe, string serializer, string type, bool both, int count)
 		{
-			var info = new ProcessStartInfo(BenchExe, serializer + " " + type + (both ? " Both " : " Serialization ") + count)
+			var processName = exe ? Path.Combine(BenchPath, "JsonBenchmark.exe") : Path.Combine(JavaPath, "java");
+			var jarArg = exe ? string.Empty : "-jar \"" + Path.Combine(BenchPath, "json-benchmark.jar") + "\" ";
+			var info = new ProcessStartInfo(processName, jarArg + serializer + " " + type + (both ? " Both " : " Serialization ") + count)
 			{
 				UseShellExecute = false,
 				RedirectStandardOutput = true,
@@ -157,9 +178,9 @@ namespace GatherResults
 				var error = process.StandardError.ReadToEnd();
 				process.Close();
 				Console.WriteLine(error);
-				result.Add(new Stats { Duration = -1, Errors = -1, Size = -1 });
-				result.Add(new Stats { Duration = -1, Errors = -1, Size = -1 });
-				result.Add(new Stats { Duration = -1, Errors = -1, Size = -1 });
+				result.Add(new Stats { Duration = -1, Size = -1 });
+				result.Add(new Stats { Duration = -1, Size = -1 });
+				result.Add(new Stats { Duration = -1, Size = -1 });
 				return result;
 			}
 			var lines = process.StandardOutput.ReadToEnd().Split('\n');
@@ -168,7 +189,7 @@ namespace GatherResults
 				var duration = lines[i * 3].Split('=');
 				var size = lines[i * 3 + 1].Split('=');
 				var errors = lines[i * 3 + 2].Split('=');
-				result.Add(new Stats { Duration = int.Parse(duration[1]), Size = int.Parse(size[1]), Errors = int.Parse(errors[1]) });
+				result.Add(new Stats { Duration = int.Parse(duration[1]), Size = long.Parse(size[1]) });
 			}
 			return result;
 		}
@@ -177,27 +198,30 @@ namespace GatherResults
 	struct Stats
 	{
 		public int Duration;
-		public int Size;
-		public int Errors;
+		public long Size;
 	}
 
 	class AggregatePass
 	{
-		public List<Stats> JsonNet;
-		public List<Stats> Jil;
-		public List<Stats> RevenjJson;
-		public List<Stats> ServiceStack;
-		public List<Stats> RevenjProtobuf;
+		public List<Stats> NewtonsoftJson;
+		public List<Stats> NetBakedInFull;
+		public List<Stats> NetBakedInMinimal;
+		public List<Stats> Jackson;
+		public List<Stats> JvmBakedInFull;
+		public List<Stats> JvmBakedInMinimal;
+		public List<Stats> Protobuf;
 
 		public Result Extract(int index)
 		{
 			return new Result
 			{
-				NewtonsoftJson = JsonNet[index],
-				Jil = Jil[index],
-				RevenjJson = RevenjJson[index],
-				ServiceStack = ServiceStack[index],
-				RevenjProtobuf = RevenjProtobuf[index],
+				NewtonsoftJson = NewtonsoftJson[index],
+				NetBakedInFull = NetBakedInFull[index],
+				NetBakedInMinimal = NetBakedInMinimal[index],
+				Jackson = Jackson[index],
+				JvmBakedInFull = JvmBakedInFull[index],
+				JvmBakedInMinimal = JvmBakedInMinimal[index],
+				Protobuf = Protobuf[index],
 			};
 		}
 	}
@@ -205,9 +229,11 @@ namespace GatherResults
 	class Result
 	{
 		public Stats NewtonsoftJson;
-		public Stats Jil;
-		public Stats RevenjJson;
-		public Stats ServiceStack;
-		public Stats RevenjProtobuf;
+		public Stats NetBakedInFull;
+		public Stats NetBakedInMinimal;
+		public Stats Jackson;
+		public Stats JvmBakedInFull;
+		public Stats JvmBakedInMinimal;
+		public Stats Protobuf;
 	}
 }

@@ -32,3 +32,6 @@ _ReSharper*/
 Dotfuscated/
 [Tt]est[Rr]esult*
 app/
+
+.idea
+*.iml

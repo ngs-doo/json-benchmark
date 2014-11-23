@@ -1,6 +1,7 @@
 ﻿module SmallObjects {
-	event Message {
+	value Message {
 		string message;
+		int version;
 	}
 	root Post {
 		string title;

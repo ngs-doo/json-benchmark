@@ -2,18 +2,22 @@
 	root Book {
 		string title;
 		int authorId;
-		List<Page> pages;
+		linked list<Page> pages;
 		date? published;
-		binary? frontCover;
-		binary? backCover;
+		binary? cover;
 		Set<Date> changes;
 		Map metadata;
+		Array<Genre> genres;
 	}
-
+	enum Genre {
+		Action;
+		Romance;
+		Comedy;
+		SciFi;
+	}
 	entity Page {
 		string text;
 		List<Note> notes;
-		List<binary> illustrations;
 		guid identity;
 	}
 	value Footnote {
@@ -27,5 +31,6 @@
 	}
 	mixin Note {
 		string note;
+		string(100)? writtenBy;
 	}
 }

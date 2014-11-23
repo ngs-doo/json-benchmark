@@ -1,14 +1,20 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.31101.0
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JsonBenchmark", "JsonBenchmark.csproj", "{2F9C5E70-99D4-4365-A243-61075B19FB5C}"
 EndProject
 Global
 	GlobalSection(DslPlatformSolutionProperties) = preSolution
 		ConnectionString = server=localhost;database=Benchmark;user=dslplatform;password=secret
+		PostgresMigration = True
 		ApplyMigration = True
 		ServerLibrary.Compile = True
 		ServerLibrary.WithManualJson = True
+		ConfirmUnsafeChanges = False
+		DiffBeforeCompile = True
+		AutoLogin = False
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86
