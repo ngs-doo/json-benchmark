@@ -34,8 +34,11 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\app\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="NGS.Templater">
-      <HintPath>lib\NGS.Templater.dll</HintPath>
+      <HintPath>..\app\NGS.Templater.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />

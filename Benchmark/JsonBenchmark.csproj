@@ -36,22 +36,22 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Newtonsoft.Json">
-      <HintPath>dependencies\Server\Newtonsoft.Json.dll</HintPath>
+      <HintPath>..\app\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="Revenj.Core">
-      <HintPath>dependencies\Server\Revenj.Core.dll</HintPath>
+      <HintPath>..\app\Revenj.Core.dll</HintPath>
     </Reference>
     <Reference Include="Revenj.DomainPatterns.Interface">
-      <HintPath>dependencies\Server\Revenj.DomainPatterns.Interface.dll</HintPath>
+      <HintPath>..\app\Revenj.DomainPatterns.Interface.dll</HintPath>
     </Reference>
     <Reference Include="Revenj.Utility">
-      <HintPath>dependencies\Server\Revenj.Utility.dll</HintPath>
+      <HintPath>..\app\Revenj.Utility.dll</HintPath>
     </Reference>
     <Reference Include="Revenj.Serialization">
-      <HintPath>dependencies\Server\Revenj.Serialization.dll</HintPath>
+      <HintPath>..\app\Revenj.Serialization.dll</HintPath>
     </Reference>
     <Reference Include="Revenj.Serialization.Interface">
-      <HintPath>dependencies\Server\Revenj.Serialization.Interface.dll</HintPath>
+      <HintPath>..\app\Revenj.Serialization.Interface.dll</HintPath>
     </Reference>
     <Reference Include="ServerModel">
       <HintPath>lib\ServerModel.dll</HintPath>

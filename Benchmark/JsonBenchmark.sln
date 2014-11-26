@@ -7,10 +7,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JsonBenchmark", "JsonBenchm
 EndProject
 Global
 	GlobalSection(DslPlatformSolutionProperties) = preSolution
-		ConnectionString = server=localhost;database=Benchmark;user=dslplatform;password=secret
+		ConnectionString = server=localhost;database=Benchmark;user=revenj;password=revenj
 		PostgresMigration = True
 		ApplyMigration = True
+		SqlScriptsPath = ..\SQL
 		ServerLibrary.Compile = True
+		ServerLibrary.Dependencies = ..\app
 		ServerLibrary.WithManualJson = True
 		ConfirmUnsafeChanges = False
 		DiffBeforeCompile = True

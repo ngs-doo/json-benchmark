@@ -1,0 +1,1 @@
+java -jar dsl-clc.jar -java_client=lib\generated-model.jar -dependencies:java_client=dependencies\java_client -dsl=. -namespace=hr.ngs.benchmark -manual-json

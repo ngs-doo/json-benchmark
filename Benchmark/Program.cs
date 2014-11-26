@@ -25,7 +25,7 @@ namespace JsonBenchmark
 
 		enum BenchType
 		{
-			Serialization, Both
+			Serialization, Both, None
 		}
 
 		static void Main(string[] args)
@@ -137,6 +137,7 @@ namespace JsonBenchmark
 		static void TestSmall(int repeat, Action<object, ChunkedMemoryStream> serialize, Func<ChunkedMemoryStream, Type, object> deserialize, BenchType type)
 		{
 			var ms = new ChunkedMemoryStream();
+			var now = DateTime.Now;
 			var sw = Stopwatch.StartNew();
 			int incorrect = 0;
 			long size = 0;
@@ -144,6 +145,7 @@ namespace JsonBenchmark
 			{
 				ms.SetLength(0);
 				var message = new SmallObjects.Message { message = "some message " + i, version = i };
+				if (type == BenchType.None) continue;
 				serialize(message, ms);
 				size += ms.Position;
 				if (type == BenchType.Both)
@@ -164,6 +166,7 @@ namespace JsonBenchmark
 			{
 				ms.SetLength(0);
 				var complex = new SmallObjects.Complex { x = i, y = -i };
+				if (type == BenchType.None) continue;
 				serialize(complex, ms);
 				size += ms.Position;
 				if (type == BenchType.Both)
@@ -183,7 +186,8 @@ namespace JsonBenchmark
 			for (int i = 0; i < repeat; i++)
 			{
 				ms.SetLength(0);
-				var post = new SmallObjects.Post { text = "some text for post " + i, title = "some title " + i, created = DateTime.Today.AddMinutes(i).Date };
+				var post = new SmallObjects.Post { text = "some text for post " + i, title = "some title " + i, created = now.AddMinutes(i).Date };
+				if (type == BenchType.None) continue;
 				serialize(post, ms);
 				size += ms.Position;
 				if (type == BenchType.Both)
@@ -211,6 +215,7 @@ namespace JsonBenchmark
 			{
 				ms.SetLength(0);
 				var delete = new StandardObjects.DeletePost { postID = i, deletedBy = i / 100, lastModified = now.AddSeconds(i), reason = "no reason" };
+				if (type == BenchType.None) continue;
 				serialize(delete, ms);
 				size += ms.Position;
 				if (type == BenchType.Both)
@@ -252,6 +257,7 @@ namespace JsonBenchmark
 							Index = j
 						});
 				}
+				if (type == BenchType.None) continue;
 				serialize(post, ms);
 				size += ms.Position;
 				if (type == BenchType.Both)
@@ -325,6 +331,7 @@ namespace JsonBenchmark
 					}
 					book.pages.AddLast(page);
 				}
+				if (type == BenchType.None) continue;
 				serialize(book, ms);
 				size += ms.Position;
 				if (type == BenchType.Both)

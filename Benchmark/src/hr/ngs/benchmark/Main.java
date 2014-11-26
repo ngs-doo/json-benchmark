@@ -23,7 +23,7 @@ public class Main {
 	}
 
 	enum BenchType {
-		Serialization, Both
+		Serialization, Both, None
 	}
 
 	static <T extends Enum> String EnumTypes(T[] enums) {
@@ -130,13 +130,14 @@ public class Main {
 
 	static void testSmall(int repeat, Serializer serializer, BenchType type) throws IOException {
 		int incorrect = 0;
-		byte[] result = null;
+		byte[] result;
 		Date start = new Date();
 		long size = 0;
 		for (int i = 0; i < repeat; i++) {
 			hr.ngs.benchmark.SmallObjects.Message message = new hr.ngs.benchmark.SmallObjects.Message();
 			message.setMessage("some message " + i);
 			message.setVersion(i);
+			if(type == BenchType.None) continue;
 			result = serializer.serialize(message);
 			size += result.length;
 			if (type == BenchType.Both) {
@@ -154,6 +155,7 @@ public class Main {
 		for (int i = 0; i < repeat; i++) {
 			hr.ngs.benchmark.SmallObjects.Complex complex = new hr.ngs.benchmark.SmallObjects.Complex();
 			complex.setX(BigDecimal.valueOf(i)).setY(BigDecimal.valueOf(- i));
+			if(type == BenchType.None) continue;
 			result = serializer.serialize(complex);
 			size += result.length;
 			if (type == BenchType.Both) {
@@ -175,6 +177,7 @@ public class Main {
 			post.setText("some text for post " + i);
 			post.setTitle("some title " + i);
 			post.setCreated(now.plusSeconds(i).toLocalDate());
+			if(type == BenchType.None) continue;
 			result = serializer.serialize(post);
 			size += result.length;
 			if (type == BenchType.Both) {
@@ -201,6 +204,7 @@ public class Main {
 			delete.setDeletedBy(i/100);
 			delete.setLastModified(now.plusSeconds(i));
 			delete.setReason("no reason");
+			if(type == BenchType.None) continue;
 			result = serializer.serialize(delete);
 			size += result.length;
 			if (type == BenchType.Both) {
@@ -229,7 +233,9 @@ public class Main {
 				comment.setVotes(new hr.ngs.benchmark.StandardObjects.Vote(j, j*2));
 				comment.setPostID(post.getID()); //TODO: we should not be updating this, but since it's never persisted, it never gets updated
 				comment.setIndex(j);
+				post.getComments().add(comment);
 			}
+			if(type == BenchType.None) continue;
 			result = serializer.serialize(post);
 			size += result.length;
 			if (type == BenchType.Both) {
@@ -299,6 +305,7 @@ public class Main {
 				}
 				book.getPages().addLast(page);
 			}
+			if(type == BenchType.None) continue;
 			result = serializer.serialize(book);
 			size += result.length;
 			if (type == BenchType.Both) {
@@ -329,10 +336,12 @@ public class Main {
 	}
 
 	static Serializer setupDslClient(final ServiceLocator locator, final boolean minimal) throws IOException {
+		final StringWriter sw = new StringWriter();
+		final StringBuffer sb = sw.getBuffer();
 		return new Serializer() {
 			@Override
 			public byte[] serialize(JsonObject arg) throws IOException {
-				StringWriter sw = new StringWriter();
+				sb.setLength(0);
 				arg.serialize(sw, minimal);
 				sw.flush();
 				return sw.toString().getBytes("UTF-8");
