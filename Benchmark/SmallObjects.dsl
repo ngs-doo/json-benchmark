@@ -10,6 +10,7 @@
 	}
 	value Complex {
 		decimal x;
-		decimal y;
+		float y;
+		long z;
 	}
 }

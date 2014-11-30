@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Diagnostics;
+using System.Linq;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters;
 using System.Text;
@@ -30,7 +31,7 @@ namespace JsonBenchmark
 
 		static void Main(string[] args)
 		{
-			//args = new[] { "NewtonsoftJson", "Small", "Both", "1" };
+			//args = new[] { "BakedInFull", "Small", "Serialization", "1" };
 			if (args.Length != 4)
 			{
 				Console.WriteLine(
@@ -165,7 +166,7 @@ namespace JsonBenchmark
 			for (int i = 0; i < repeat; i++)
 			{
 				ms.SetLength(0);
-				var complex = new SmallObjects.Complex { x = i, y = -i };
+				var complex = new SmallObjects.Complex { x = i / 1000, y = -i / 1000, z = i };
 				if (type == BenchType.None) continue;
 				serialize(complex, ms);
 				size += ms.Position;
@@ -209,12 +210,21 @@ namespace JsonBenchmark
 			var ms = new ChunkedMemoryStream();
 			int incorrect = 0;
 			long size = 0;
-			var now = DateTime.Now;
+			var now = DateTime.Now.ToUniversalTime();
+			var guids = Enumerable.Range(0, 100).Select(it => Guid.NewGuid()).ToArray();
 			var sw = Stopwatch.StartNew();
 			for (int i = 0; i < repeat; i++)
 			{
 				ms.SetLength(0);
 				var delete = new StandardObjects.DeletePost { postID = i, deletedBy = i / 100, lastModified = now.AddSeconds(i), reason = "no reason" };
+				if (i % 3 == 0) delete.referenceId = guids[i % 100];
+				if (i % 5 == 0) delete.state = (StandardObjects.PostState)(i % 3);
+				if (i % 7 == 0)
+				{
+					delete.versions = new long[i % 100 + 1];//ProtoBuf hack - always add object since Protobuf can't differentiate
+					for (int x = 0; x <= i % 100; x++)
+						delete.versions[x] = i * x + x;
+				}
 				if (type == BenchType.None) continue;
 				serialize(delete, ms);
 				size += ms.Position;
@@ -237,7 +247,7 @@ namespace JsonBenchmark
 				ms.SetLength(0);
 				var post = new StandardObjects.Post
 				{
-					approved = now.AddMilliseconds(i),
+					approved = i % 2 == 0 ? null : (DateTime?)now.AddMilliseconds(i),
 					votes = new StandardObjects.Vote { downvote = i / 3, upvote = i / 2 },
 					text = "some text describing post " + i,
 					title = "post title " + i,
@@ -250,8 +260,7 @@ namespace JsonBenchmark
 						{
 							message = "comment number " + i + " for " + j,
 							votes = new StandardObjects.Vote { upvote = j, downvote = j * 2 },
-							approved = j % 2 == 0 ? null : (DateTime?)now.AddMilliseconds(i),
-							state = (StandardObjects.CommentState)(j % 3),
+							approved = j % 3 != 0 ? null : (DateTime?)now.AddMilliseconds(i),
 							user = "some random user " + i,
 							PostID = post.ID, //TODO: we should not be updating this, but since it's never persisted, it never gets updated
 							Index = j
@@ -279,7 +288,7 @@ namespace JsonBenchmark
 			var ms = new ChunkedMemoryStream();
 			var illustrations = new List<byte[]>();
 			var rnd = new Random(1);
-			var now = DateTime.Now;
+			var now = DateTime.Now.ToUniversalTime();
 			long size = 0;
 			for (int i = 0; i < 10; i++)
 			{
@@ -308,7 +317,7 @@ namespace JsonBenchmark
 					book.metadata["key " + i + j] = "value " + i + j;
 				if (i % 3 == 0 || i % 7 == 0) book.cover = illustrations[i % illustrations.Count];
 				var sb = new StringBuilder();
-				for (int j = 0; j < i % 100; j++)
+				for (int j = 0; j < i % 1000; j++)
 				{
 					sb.Append("some text on page " + j);
 					sb.Append("more text for " + i);

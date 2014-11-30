@@ -1,9 +1,12 @@
 ﻿module StandardObjects {
 	value DeletePost {
 		int postID;
+		guid? referenceId;
 		timestamp lastModified;
 		long deletedBy;
 		string? reason;
+		long[]? versions; //Issue: ProtoBuf doesn't differentiate empty array from null
+		PostState? state;
 	}
 	enum PostState {
 		Draft;
@@ -16,24 +19,17 @@
 		date created;
 		Set<string> tags;
 		timestamp? approved;
-		timestamp lastModified;
 		List<Comment> comments;
 		Vote votes;
 		List<string>? notes;
 		PostState state;
 	}
-	enum CommentState {
-		Pending;
-		Approved;
-		Removed;
-	}
 	entity Comment {
-		timestamp created;
+		date created;
 		timestamp? approved;
 		string? user;
 		string message;
 		Vote votes;
-		CommentState state;
 	}
 	value Vote {
 		int upvote;

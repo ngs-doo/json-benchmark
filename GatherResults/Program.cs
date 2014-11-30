@@ -43,51 +43,38 @@ namespace GatherResults
 			var javaVersion = process.StandardOutput.ReadToEnd();
 			Console.WriteLine(javaVersion);
 			int repeat = args.Length > 1 ? int.Parse(args[1]) : 2;
-			var smallSer1 = RunSmall(false, repeat, 1);
-			var smallBoth1 = RunSmall(true, repeat, 1);
-			var largeSer1 = RunLarge(false, repeat, 1);
-			var largeBoth1 = RunLarge(true, repeat, 1);
-			var smallSer100k = RunSmall(false, repeat, 100000);
-			var smallBoth100k = RunSmall(true, repeat, 100000);
-			var smallSer1m = RunSmall(false, repeat, 1000000);
-			var smallBoth1m = RunSmall(true, repeat, 1000000);
-			var smallSer10m = RunSmall(false, repeat, 10000000);
-			var smallBoth10m = RunSmall(true, repeat, 10000000);
-			var standardSer10k = RunStandard(false, repeat, 10000);
-			var standardBoth10k = RunStandard(true, repeat, 10000);
-			var standardSer100k = RunStandard(false, repeat, 100000);
-			var standardBoth100k = RunStandard(true, repeat, 100000);
-			var standardSer1m = RunStandard(false, repeat, 1000000);
-			var standardBoth1m = RunStandard(true, repeat, 1000000);
-			var largeSer100 = RunLarge(false, repeat, 100);
-			var largeBoth100 = RunLarge(true, repeat, 100);
-			var largeSer1k = RunLarge(false, repeat, 1000);
-			var largeBoth1k = RunLarge(true, repeat, 1000);
-			var largeSer10k = RunLarge(false, repeat, 10000);
-			var largeBoth10k = RunLarge(true, repeat, 10000);
+			var small1 = RunSmall(repeat, 1);
+			var large1 = RunLarge(repeat, 1);
+			var small100k = RunSmall(repeat, 100000);
+			var small1m = RunSmall(repeat, 1000000);
+			var small10m = RunSmall(repeat, 10000000);
+			var std10k = RunStandard(repeat, 10000);
+			var std100k = RunStandard(repeat, 100000);
+			var std1m = RunStandard(repeat, 1000000);
+			var large100 = RunLarge(repeat, 100);
+			var large1k = RunLarge(repeat, 1000);
 			File.Copy("template.xlsx", "results.xlsx", true);
 			var vm = new ViewModel[]
 			{
-				new ViewModel("Startup times: SmallObject.Message",smallSer1.Message, smallBoth1.Message),
-				new ViewModel("Startup times: LargeObjects.Book",largeSer1, largeBoth1),
-				new ViewModel("100.000 SmallObjects.Message", smallSer100k.Message, smallBoth100k.Message),
-				new ViewModel("1.000.000 SmallObjects.Message", smallSer1m.Message, smallBoth1m.Message),
-				new ViewModel("10.000.000 SmallObjects.Message", smallSer10m.Message, smallBoth10m.Message),
-				new ViewModel("100.000 SmallObjects.Complex", smallSer100k.Complex, smallBoth100k.Complex),
-				new ViewModel("1.000.000 SmallObjects.Complex", smallSer1m.Complex, smallBoth1m.Complex),
-				new ViewModel("10.000.000 SmallObjects.Complex", smallSer10m.Complex, smallBoth10m.Complex),
-				new ViewModel("100.000 SmallObjects.Post", smallSer100k.Post, smallBoth100k.Post),
-				new ViewModel("1.000.000 SmallObjects.Post", smallSer1m.Post, smallBoth1m.Post),
-				new ViewModel("10.000.000 SmallObjects.Post", smallSer10m.Post, smallBoth10m.Post),
-				new ViewModel("10.000 StandardObjects.DeletePost", standardSer10k.DeletePost, standardBoth10k.DeletePost),
-				new ViewModel("100.000 StandardObjects.DeletePost", standardSer100k.DeletePost, standardBoth100k.DeletePost),
-				new ViewModel("1.000.000 StandardObjects.DeletePost", standardSer1m.DeletePost, standardBoth1m.DeletePost),
-				new ViewModel("10.000 StandardObjects.Post", standardSer10k.Post, standardBoth10k.Post),
-				new ViewModel("100.000 StandardObjects.Post", standardSer100k.Post, standardBoth100k.Post),
-				new ViewModel("1.000.000 StandardObjects.Post", standardSer1m.Post, standardBoth1m.Post),
-				new ViewModel("100 LargeObjects.Book", largeSer100, largeBoth100),
-				new ViewModel("1.000 LargeObjects.Book", largeSer1k, largeBoth1k),
-				new ViewModel("10.000 LargeObjects.Book", largeSer10k, largeBoth10k),
+				ViewModel.Create("Startup times: SmallObject.Message",small1, t => t.Message),
+				new ViewModel("Startup times: LargeObjects.Book",large1),
+				ViewModel.Create("100.000 SmallObjects.Message", small100k, t => t.Message),
+				ViewModel.Create("1.000.000 SmallObjects.Message", small1m, t => t.Message),
+				ViewModel.Create("10.000.000 SmallObjects.Message", small10m, t => t.Message),
+				ViewModel.Create("100.000 SmallObjects.Complex", small100k, t => t.Complex),
+				ViewModel.Create("1.000.000 SmallObjects.Complex", small1m, t => t.Complex),
+				ViewModel.Create("10.000.000 SmallObjects.Complex", small10m, t => t.Complex),
+				ViewModel.Create("100.000 SmallObjects.Post", small100k, t => t.Post),
+				ViewModel.Create("1.000.000 SmallObjects.Post", small1m, t => t.Post),
+				ViewModel.Create("10.000.000 SmallObjects.Post", small10m, t => t.Post),
+				ViewModel.Create("10.000 StandardObjects.DeletePost", std10k, t => t.DeletePost),
+				ViewModel.Create("100.000 StandardObjects.DeletePost", std100k, t => t.DeletePost),
+				ViewModel.Create("1.000.000 StandardObjects.DeletePost", std1m, t => t.DeletePost),
+				ViewModel.Create("10.000 StandardObjects.Post", std10k, t => t.Post),
+				ViewModel.Create("100.000 StandardObjects.Post", std100k, t => t.Post),
+				ViewModel.Create("1.000.000 StandardObjects.Post", std1m, t => t.Post),
+				new ViewModel("100 LargeObjects.Book", large100),
+				new ViewModel("1.000 LargeObjects.Book", large1k),
 			};
 			var json = JsonConvert.SerializeObject(vm);
 			File.WriteAllText("results.json", json);
@@ -101,6 +88,15 @@ namespace GatherResults
 			public List<Result> Message = new List<Result>();
 			public List<Result> Complex = new List<Result>();
 			public List<Result> Post = new List<Result>();
+		}
+
+		static Run<SmallTest> RunSmall(int times, int loops)
+		{
+			return new Run<SmallTest>
+			{
+				Serialization = RunSmall(false, times, loops),
+				Both = RunSmall(true, times, loops)
+			};
 		}
 
 		static SmallTest RunSmall(bool both, int times, int loops)
@@ -126,6 +122,15 @@ namespace GatherResults
 			public List<Result> Post = new List<Result>();
 		}
 
+		static Run<StandardTest> RunStandard(int times, int loops)
+		{
+			return new Run<StandardTest>
+			{
+				Serialization = RunStandard(false, times, loops),
+				Both = RunStandard(true, times, loops)
+			};
+		}
+
 		static StandardTest RunStandard(bool both, int times, int loops)
 		{
 			Console.Write("Gathering standard (" + loops + ") " + (both ? "serialization and deserialization" : "serialization only"));
@@ -140,6 +145,15 @@ namespace GatherResults
 			}
 			Console.WriteLine(" ... done");
 			return result;
+		}
+
+		static Run<List<Result>> RunLarge(int times, int loops)
+		{
+			return new Run<List<Result>>
+			{
+				Serialization = RunLarge(false, times, loops),
+				Both = RunLarge(true, times, loops)
+			};
 		}
 
 		static List<Result> RunLarge(bool both, int times, int loops)
@@ -214,7 +228,7 @@ namespace GatherResults
 				var duration = lines[i * 3].Split('=');
 				var size = lines[i * 3 + 1].Split('=');
 				var errors = lines[i * 3 + 2].Split('=');
-				Console.WriteLine("duration = " + duration[1].Trim() + ", size = " + size[1].Trim() + ", errors = " + errors[1].Trim());
+				Console.WriteLine(serializer + ": duration = " + duration[1].Trim() + ", size = " + size[1].Trim() + ", errors = " + errors[1].Trim());
 				result.Add(new Stats { Duration = int.Parse(duration[1]), Size = long.Parse(size[1]) });
 			}
 			return result;
@@ -269,16 +283,29 @@ namespace GatherResults
 		public Stats Protobuf;
 	}
 
+	class Run<T>
+	{
+		public T Serialization;
+		public T Both;
+	}
+
 	class ViewModel
 	{
 		public string description;
 		public List<Result> serialization;
 		public List<Result> both;
-		public ViewModel(string description, List<Result> serialization, List<Result> both)
+		public ViewModel(string description, Run<List<Result>> run)
+			: this(description, run.Serialization, run.Both) { }
+		private ViewModel(string description, List<Result> serialization, List<Result> both)
 		{
 			this.description = description;
 			this.serialization = serialization;
 			this.both = both;
+		}
+
+		public static ViewModel Create<T>(string description, Run<T> run, Func<T, List<Result>> extract)
+		{
+			return new ViewModel(description, extract(run.Serialization), extract(run.Both));
 		}
 	}
 }

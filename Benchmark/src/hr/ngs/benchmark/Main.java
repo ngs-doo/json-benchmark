@@ -4,11 +4,12 @@ import com.dslplatform.client.Bootstrap;
 import com.dslplatform.client.JsonSerialization;
 import com.dslplatform.client.json.JsonObject;
 import com.dslplatform.client.json.JsonReader;
+import com.dslplatform.client.json.JsonWriter;
 import com.dslplatform.patterns.ServiceLocator;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 
 import java.io.IOException;
-import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.util.*;
 
@@ -37,11 +38,12 @@ public class Main {
 
 	interface Serializer {
 		byte[] serialize(JsonObject arg) throws IOException;
+
 		<T> T deserialize(Class<T> manifest, byte[] input) throws IOException;
 	}
 
 	public static void main(String[] args) throws Exception {
-		//args = new String[]{"BakedInMinimal", "Standard", "Both", "1"};
+		//args = new String[]{"BakedInMinimal", "Standard", "Serialization", "100000"};
 		if (args.length != 4) {
 			System.out.printf(
 					"Expected usage: java -jar json-benchamrk.jar (%s) (%s) (%s)",
@@ -83,7 +85,7 @@ public class Main {
 		p.setProperty("package-name", "hr.ngs.benchmark");
 		ServiceLocator locator = Bootstrap.init(p);
 		Serializer serializer;
-		if(target == BenchTarget.Jackson) {
+		if (target == BenchTarget.Jackson) {
 			serializer = setupJackson(locator);
 		} else if (target == BenchTarget.BakedInFull) {
 			serializer = setupDslClient(locator, false);
@@ -100,7 +102,7 @@ public class Main {
 				System.out.println("error");
 				System.out.println(ex.fillInStackTrace());
 			}
-		} else if ( size == BenchSize.Standard) {
+		} else if (size == BenchSize.Standard) {
 			try {
 				testStandard(repeat, serializer, type);
 			} catch (Exception ex) {
@@ -110,13 +112,13 @@ public class Main {
 				System.out.println(ex.fillInStackTrace());
 			}
 		} else {
-				try {
-					testLarge(repeat, serializer, type);
-				} catch (Exception ex) {
-					reportStats(new Date(), -1, repeat);
-					System.out.println("error");
-					System.out.println(ex.fillInStackTrace());
-				}
+			try {
+				testLarge(repeat, serializer, type);
+			} catch (Exception ex) {
+				reportStats(new Date(), -1, repeat);
+				System.out.println("error");
+				System.out.println(ex.fillInStackTrace());
+			}
 		}
 	}
 
@@ -137,7 +139,7 @@ public class Main {
 			hr.ngs.benchmark.SmallObjects.Message message = new hr.ngs.benchmark.SmallObjects.Message();
 			message.setMessage("some message " + i);
 			message.setVersion(i);
-			if(type == BenchType.None) continue;
+			if (type == BenchType.None) continue;
 			result = serializer.serialize(message);
 			size += result.length;
 			if (type == BenchType.Both) {
@@ -154,8 +156,8 @@ public class Main {
 		incorrect = 0;
 		for (int i = 0; i < repeat; i++) {
 			hr.ngs.benchmark.SmallObjects.Complex complex = new hr.ngs.benchmark.SmallObjects.Complex();
-			complex.setX(BigDecimal.valueOf(i)).setY(BigDecimal.valueOf(- i));
-			if(type == BenchType.None) continue;
+			complex.setX(BigDecimal.valueOf(i / 1000f)).setY(-i / 1000f).setZ(i);
+			if (type == BenchType.None) continue;
 			result = serializer.serialize(complex);
 			size += result.length;
 			if (type == BenchType.Both) {
@@ -168,7 +170,7 @@ public class Main {
 		}
 		reportStats(start, size, incorrect);
 		size = 0;
-		DateTime now = DateTime.now();
+		DateTime now = new DateTime(new Date(), DateTimeZone.UTC);
 		String ld = now.toLocalDate().toString();
 		start = new Date();
 		incorrect = 0;
@@ -177,7 +179,7 @@ public class Main {
 			post.setText("some text for post " + i);
 			post.setTitle("some title " + i);
 			post.setCreated(now.plusSeconds(i).toLocalDate());
-			if(type == BenchType.None) continue;
+			if (type == BenchType.None) continue;
 			result = serializer.serialize(post);
 			size += result.length;
 			if (type == BenchType.Both) {
@@ -193,7 +195,11 @@ public class Main {
 
 	static void testStandard(int repeat, Serializer serializer, BenchType type) throws IOException {
 		int incorrect = 0;
-		DateTime now = DateTime.now();
+		DateTime now = new DateTime(new Date(), DateTimeZone.UTC);
+		UUID[] uuids = new UUID[100];
+		for (int i = 0; i < 100; i++) {
+			uuids[i] = UUID.randomUUID();
+		}
 		long size = 0;
 		hr.ngs.benchmark.StandardObjects.PostState[] states = hr.ngs.benchmark.StandardObjects.PostState.values();
 		byte[] result = null;
@@ -201,10 +207,17 @@ public class Main {
 		for (int i = 0; i < repeat; i++) {
 			hr.ngs.benchmark.StandardObjects.DeletePost delete = new hr.ngs.benchmark.StandardObjects.DeletePost();
 			delete.setPostID(i);
-			delete.setDeletedBy(i/100);
+			delete.setDeletedBy(i / 100);
 			delete.setLastModified(now.plusSeconds(i));
 			delete.setReason("no reason");
-			if(type == BenchType.None) continue;
+			if (i % 3 == 0) delete.setReferenceId(uuids[i % 100]);
+			if (i % 5 == 0) delete.setState(states[i % 3]);
+			if (i % 7 == 0) {
+				delete.setVersions(new long[i % 100 + 1]);
+				for (int x = 0; x <= i % 100; x++)
+					delete.getVersions()[x] = i * x + x;
+			}
+			if (type == BenchType.None) continue;
 			result = serializer.serialize(delete);
 			size += result.length;
 			if (type == BenchType.Both) {
@@ -221,7 +234,7 @@ public class Main {
 		incorrect = 0;
 		for (int i = 0; i < repeat; i++) {
 			hr.ngs.benchmark.StandardObjects.Post post = new hr.ngs.benchmark.StandardObjects.Post();
-			post.setApproved(now.plusMillis(i));
+			post.setApproved(i % 2 == 0 ? null : now.plusMillis(i));
 			post.setVotes(new hr.ngs.benchmark.StandardObjects.Vote(i / 2, i / 3));
 			post.setText("some text describing post " + i);
 			post.setTitle("post title " + i);
@@ -229,13 +242,14 @@ public class Main {
 			for (int j = 0; j < i % 100; j++) {
 				hr.ngs.benchmark.StandardObjects.Comment comment = new hr.ngs.benchmark.StandardObjects.Comment();
 				comment.setMessage("comment number " + i + " for " + j);
-				comment.setApproved(j % 2 == 0 ? null : now.plusMillis(i));
-				comment.setVotes(new hr.ngs.benchmark.StandardObjects.Vote(j, j*2));
+				comment.setVotes(new hr.ngs.benchmark.StandardObjects.Vote(j, j * 2));
+				comment.setApproved(j % 3 != 0 ? null : now.plusMillis(i));
+				comment.setUser("some random user " + i);
 				comment.setPostID(post.getID()); //TODO: we should not be updating this, but since it's never persisted, it never gets updated
 				comment.setIndex(j);
 				post.getComments().add(comment);
 			}
-			if(type == BenchType.None) continue;
+			if (type == BenchType.None) continue;
 			result = serializer.serialize(post);
 			size += result.length;
 			if (type == BenchType.Both) {
@@ -265,7 +279,7 @@ public class Main {
 		Date start = new Date();
 		for (int i = 0; i < repeat; i++) {
 			hr.ngs.benchmark.LargeObjects.Book book = new hr.ngs.benchmark.LargeObjects.Book();
-			book.setAuthorId(i/100);
+			book.setAuthorId(i / 100);
 			book.setPublished(i % 3 == 0 ? null : now.plusMinutes(i).toLocalDate());
 			book.setTitle("book title " + i);
 			ArrayList<hr.ngs.benchmark.LargeObjects.Genre> genres = new ArrayList<hr.ngs.benchmark.LargeObjects.Genre>();
@@ -278,7 +292,7 @@ public class Main {
 				book.getMetadata().put("key " + i + j, "value " + i + j);
 			if (i % 3 == 0 || i % 7 == 0) book.setCover(illustrations.get(i % illustrations.size()));
 			StringBuilder sb = new StringBuilder();
-			for (int j = 0; j < i % 100; j++) {
+			for (int j = 0; j < i % 1000; j++) {
 				sb.append("some text on page " + j);
 				sb.append("more text for " + i);
 				hr.ngs.benchmark.LargeObjects.Page page = new hr.ngs.benchmark.LargeObjects.Page();
@@ -305,7 +319,7 @@ public class Main {
 				}
 				book.getPages().addLast(page);
 			}
-			if(type == BenchType.None) continue;
+			if (type == BenchType.None) continue;
 			result = serializer.serialize(book);
 			size += result.length;
 			if (type == BenchType.Both) {
@@ -330,21 +344,18 @@ public class Main {
 				jsonReaderes.put(manifest, reader);
 			}
 			return reader;
-		}catch (Exception ignore) {
+		} catch (Exception ignore) {
 			return null;
 		}
 	}
 
 	static Serializer setupDslClient(final ServiceLocator locator, final boolean minimal) throws IOException {
-		final StringWriter sw = new StringWriter();
-		final StringBuffer sb = sw.getBuffer();
+		final JsonWriter sw = new JsonWriter();
 		return new Serializer() {
 			@Override
 			public byte[] serialize(JsonObject arg) throws IOException {
-				sb.setLength(0);
 				arg.serialize(sw, minimal);
-				sw.flush();
-				return sw.toString().getBytes("UTF-8");
+				return sw.toBytes();
 			}
 
 			@SuppressWarnings("unchecked")
