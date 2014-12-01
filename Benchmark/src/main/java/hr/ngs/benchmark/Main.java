@@ -24,7 +24,7 @@ public class Main {
 	}
 
 	enum BenchType {
-		Serialization, Both, None
+		Serialization, Both, None, Check
 	}
 
 	static <T extends Enum> String EnumTypes(T[] enums) {
@@ -43,7 +43,7 @@ public class Main {
 	}
 
 	public static void main(String[] args) throws Exception {
-		//args = new String[]{"BakedInMinimal", "Standard", "Serialization", "100000"};
+		//args = new String[]{"BakedInMinimal", "Standard", "Both", "100"};
 		if (args.length != 4) {
 			System.out.printf(
 					"Expected usage: java -jar json-benchamrk.jar (%s) (%s) (%s)",
@@ -142,9 +142,9 @@ public class Main {
 			if (type == BenchType.None) continue;
 			result = serializer.serialize(message);
 			size += result.length;
-			if (type == BenchType.Both) {
+			if (type == BenchType.Both || type == BenchType.Check) {
 				hr.ngs.benchmark.SmallObjects.Message deser = serializer.deserialize(hr.ngs.benchmark.SmallObjects.Message.class, result);
-				if (!message.equals(deser)) {
+				if (type == BenchType.Check && !message.equals(deser)) {
 					incorrect++;
 					//throw new IOException("not equal");
 				}
@@ -160,9 +160,9 @@ public class Main {
 			if (type == BenchType.None) continue;
 			result = serializer.serialize(complex);
 			size += result.length;
-			if (type == BenchType.Both) {
+			if (type == BenchType.Both || type == BenchType.Check) {
 				hr.ngs.benchmark.SmallObjects.Complex deser = serializer.deserialize(hr.ngs.benchmark.SmallObjects.Complex.class, result);
-				if (!deser.equals(complex)) {
+				if (type == BenchType.Check && !deser.equals(complex)) {
 					incorrect++;
 					//throw new SerializationException("not equal");
 				}
@@ -182,9 +182,9 @@ public class Main {
 			if (type == BenchType.None) continue;
 			result = serializer.serialize(post);
 			size += result.length;
-			if (type == BenchType.Both) {
+			if (type == BenchType.Both || type == BenchType.Check) {
 				hr.ngs.benchmark.SmallObjects.Post deser = serializer.deserialize(hr.ngs.benchmark.SmallObjects.Post.class, result);
-				if (!deser.equals(post)) {
+				if (type == BenchType.Check && !deser.equals(post)) {
 					incorrect++;
 					//throw new SerializationException("not equal");
 				}
@@ -219,10 +219,11 @@ public class Main {
 			}
 			if (type == BenchType.None) continue;
 			result = serializer.serialize(delete);
+			//System.out.println(new String(result, "UTF-8"));
 			size += result.length;
-			if (type == BenchType.Both) {
+			if (type == BenchType.Both || type == BenchType.Check) {
 				hr.ngs.benchmark.StandardObjects.DeletePost deser = serializer.deserialize(hr.ngs.benchmark.StandardObjects.DeletePost.class, result);
-				if (!delete.equals(deser)) {
+				if (type == BenchType.Check && !delete.equals(deser)) {
 					incorrect++;
 					//throw new SerializationException("not equal");
 				}
@@ -252,9 +253,9 @@ public class Main {
 			if (type == BenchType.None) continue;
 			result = serializer.serialize(post);
 			size += result.length;
-			if (type == BenchType.Both) {
+			if (type == BenchType.Both || type == BenchType.Check) {
 				hr.ngs.benchmark.StandardObjects.Post deser = serializer.deserialize(hr.ngs.benchmark.StandardObjects.Post.class, result);
-				if (!post.equals(deser)) {
+				if (type == BenchType.Check && !post.equals(deser)) {
 					incorrect++;
 					//throw new SerializationException("not equal");
 				}
@@ -321,10 +322,11 @@ public class Main {
 			}
 			if (type == BenchType.None) continue;
 			result = serializer.serialize(book);
+			//System.out.println(new String(result, "UTF-8"));
 			size += result.length;
-			if (type == BenchType.Both) {
+			if (type == BenchType.Both || type == BenchType.Check) {
 				hr.ngs.benchmark.LargeObjects.Book deser = serializer.deserialize(hr.ngs.benchmark.LargeObjects.Book.class, result);
-				if (!book.equals(deser)) {
+				if (type == BenchType.Check && !book.equals(deser)) { //TODO: this doesn't actually work as expected yet
 					incorrect++;
 					//throw new SerializationException("not equal");
 				}

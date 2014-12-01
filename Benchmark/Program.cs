@@ -26,7 +26,7 @@ namespace JsonBenchmark
 
 		enum BenchType
 		{
-			Serialization, Both, None
+			Serialization, Both, None, Check
 		}
 
 		static void Main(string[] args)
@@ -152,11 +152,11 @@ namespace JsonBenchmark
 				if (type == BenchType.None) continue;
 				serialize(message, ms);
 				size += ms.Position;
-				if (type == BenchType.Both)
+				if (type == BenchType.Both || type == BenchType.Check)
 				{
 					ms.Position = 0;
 					var deser = (SmallObjects.Message)deserialize(ms, typeof(SmallObjects.Message));
-					if (!message.Equals(deser))
+					if (type == BenchType.Check && !message.Equals(deser))
 					{
 						incorrect++;
 						//throw new SerializationException("not equal");
@@ -173,11 +173,11 @@ namespace JsonBenchmark
 				if (type == BenchType.None) continue;
 				serialize(complex, ms);
 				size += ms.Position;
-				if (type == BenchType.Both)
+				if (type == BenchType.Both || type == BenchType.Check)
 				{
 					ms.Position = 0;
 					var deser = (SmallObjects.Complex)deserialize(ms, typeof(SmallObjects.Complex));
-					if (!deser.Equals(complex))
+					if (type == BenchType.Check && !deser.Equals(complex))
 					{
 						incorrect++;
 						//throw new SerializationException("not equal");
@@ -194,11 +194,11 @@ namespace JsonBenchmark
 				if (type == BenchType.None) continue;
 				serialize(post, ms);
 				size += ms.Position;
-				if (type == BenchType.Both)
+				if (type == BenchType.Both || type == BenchType.Check)
 				{
 					ms.Position = 0;
 					var deser = (SmallObjects.Post)deserialize(ms, typeof(SmallObjects.Post));
-					if (!deser.Equals(post))
+					if (type == BenchType.Check && !deser.Equals(post))
 					{
 						incorrect++;
 						//throw new SerializationException("not equal");
@@ -231,11 +231,11 @@ namespace JsonBenchmark
 				if (type == BenchType.None) continue;
 				serialize(delete, ms);
 				size += ms.Position;
-				if (type == BenchType.Both)
+				if (type == BenchType.Both || type == BenchType.Check)
 				{
 					ms.Position = 0;
 					var deser = (StandardObjects.DeletePost)deserialize(ms, typeof(StandardObjects.DeletePost));
-					if (!delete.Equals(deser))
+					if (type == BenchType.Check && !delete.Equals(deser))
 					{
 						incorrect++;
 						//throw new SerializationException("not equal");
@@ -272,11 +272,11 @@ namespace JsonBenchmark
 				if (type == BenchType.None) continue;
 				serialize(post, ms);
 				size += ms.Position;
-				if (type == BenchType.Both)
+				if (type == BenchType.Both || type == BenchType.Check)
 				{
 					ms.Position = 0;
 					var deser = (StandardObjects.Post)deserialize(ms, typeof(StandardObjects.Post));
-					if (!post.Equals(deser))
+					if (type == BenchType.Check && !post.Equals(deser))
 					{
 						incorrect++;
 						//throw new SerializationException("not equal");
@@ -346,11 +346,11 @@ namespace JsonBenchmark
 				if (type == BenchType.None) continue;
 				serialize(book, ms);
 				size += ms.Position;
-				if (type == BenchType.Both)
+				if (type == BenchType.Both || type == BenchType.Check)
 				{
 					ms.Position = 0;
 					var deser = (LargeObjects.Book)deserialize(ms, typeof(LargeObjects.Book));
-					if (!book.Equals(deser))
+					if (type == BenchType.Check && !book.Equals(deser))
 					{
 						incorrect++;
 						//throw new SerializationException("not equal");

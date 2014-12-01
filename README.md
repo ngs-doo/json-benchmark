@@ -83,6 +83,7 @@ JVM: 1.7.21 and .NET: 4.5.1
 ###Reproducing results
 
 Run [GatherResults.exe](app/GatherResults.exe) or *GatherResults.exe . 5*
+
 Individual tests can be run as:
 
  * .NET: [JsonBenchmark.exe](app/JsonBenchmark.exe) (example: *JsonBenchmark.exe BakedInMinimal Small Both 1000000*)
@@ -93,7 +94,9 @@ If you are interested in changing the models, then you can:
  * install Visual studio plugin: [DDD for DSL](https://visualstudiogallery.msdn.microsoft.com/5b8a140c-5c84-40fc-a551-b255ba7676f4)
  * or use [dsl-clc.jar with compile.bat](Benchmark/compile.bat)
 
-If you want to test other libraries run benchmark without arguments to find out which libraries are available. For example to test Jil run: *JsonBenchmark.exe Jil Small Both 1000000* (most of them have issues - fail to serialize some fields, incorrectly deserializes date, throw exceptions due some bugs, etc...)
+If you want to test other libraries run benchmark without arguments to find out which libraries are available. For example to test Jil run: *JsonBenchmark.exe Jil Small Both 1000000* (most of them have issues - fail to serialize some fields, incorrectly deserializes date, throw exceptions due some bugs, etc... )
+
+*Invalid deserialization will be detected only if **Check** argument is used*.
 
 ###Conclusions
 
