@@ -1,9 +1,9 @@
-﻿using Revenj.DomainPatterns;
+﻿using Revenj.Extensibility;
+using Revenj.Logging;
 using Revenj.Serialization;
 using Revenj.Utility;
 using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.Serialization;
@@ -16,7 +16,7 @@ namespace JsonBenchmark
 	{
 		enum BenchTarget
 		{
-			BakedInFull, BakedInMinimal, ProtoBuf, NewtonsoftJson
+			BakedInFull, BakedInMinimal, ProtoBuf, NewtonsoftJson, Jil
 		}
 
 		enum BenchSize
@@ -31,7 +31,7 @@ namespace JsonBenchmark
 
 		static void Main(string[] args)
 		{
-			//args = new[] { "BakedInFull", "Small", "Serialization", "1" };
+			//args = new[] { "Jil", "Small", "Both", "1" };
 			if (args.Length != 4)
 			{
 				Console.WriteLine(
@@ -71,6 +71,9 @@ namespace JsonBenchmark
 			{
 				case BenchTarget.NewtonsoftJson:
 					SetupNewtonsoftJson(out serialize, out deserialize);
+					break;
+				case BenchTarget.Jil:
+					SetupJil(out serialize, out deserialize);
 					break;
 				case BenchTarget.ProtoBuf:
 					SetupRevenj(out serialize, out deserialize, "application/x-protobuf");
@@ -357,10 +360,15 @@ namespace JsonBenchmark
 			ReportStatsAndRestart(sw, size, incorrect);
 		}
 
+		class MockLog : ILogFactory
+		{
+			public ILogger Create(string name) { return null; }
+		}
+
 		static void SetupRevenj(out Action<object, ChunkedMemoryStream> serialize, out Func<ChunkedMemoryStream, Type, object> deserialize, string contentType)
 		{
-			IServiceLocator locator = DSL.Core.SetupPostgres(ConfigurationManager.AppSettings["ConnectionString"]);
-			IWireSerialization serialization = locator.Resolve<IWireSerialization>();
+			var binder = new GenericDeserializationBinder(new Lazy<ITypeResolver>(() => null));
+			IWireSerialization serialization = new WireSerialization(new MockLog(), binder);
 			serialize = (obj, stream) => serialization.Serialize(obj, contentType, stream);
 			deserialize = (stream, type) => serialization.Deserialize(stream, type, contentType, default(StreamingContext));
 		}
@@ -377,6 +385,17 @@ namespace JsonBenchmark
 				sw.Flush();
 			};
 			deserialize = (stream, type) => serializer.Deserialize(stream.GetReader(), type);
+		}
+
+		static void SetupJil(out Action<object, ChunkedMemoryStream> serialize, out Func<ChunkedMemoryStream, Type, object> deserialize)
+		{
+			serialize = (obj, stream) =>
+			{
+				var sw = stream.GetWriter();
+				Jil.JSON.Serialize(obj, sw);
+				sw.Flush();
+			};
+			deserialize = (stream, type) => Jil.JSON.Deserialize(stream.GetReader(), type);
 		}
 	}
 }
