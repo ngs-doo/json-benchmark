@@ -169,7 +169,7 @@ namespace JsonBenchmark
 			for (int i = 0; i < repeat; i++)
 			{
 				ms.SetLength(0);
-				var complex = new SmallObjects.Complex { x = i / 1000, y = -i / 1000, z = i };
+				var complex = new SmallObjects.Complex { x = i / 1000m, y = -i / 1000f, z = i };
 				if (type == BenchType.None) continue;
 				serialize(complex, ms);
 				size += ms.Position;

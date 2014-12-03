@@ -172,12 +172,14 @@ namespace GatherResults
 
 		static AggregatePass GetherDuration(string type, bool both, int count)
 		{
+			RunSinglePass(true, "BakedInMinimal", type, null, 1); //warmup
 			var Net = RunSinglePass(true, "BakedInMinimal", type, null, count);
-			var Jvm = RunSinglePass(false, "BakedInMinimal", type, null, count);
 			var NJ = RunSinglePass(true, "NewtonsoftJson", type, both, count);
 			var NBF = RunSinglePass(true, "BakedInFull", type, both, count);
 			var NBM = RunSinglePass(true, "BakedInMinimal", type, both, count);
 			var NP = RunSinglePass(true, "ProtoBuf", type, both, count);
+			RunSinglePass(false, "BakedInMinimal", type, null, 1); //warmup
+			var Jvm = RunSinglePass(false, "BakedInMinimal", type, null, count);
 			var JJ = RunSinglePass(false, "Jackson", type, both, count);
 			var JBF = RunSinglePass(false, "BakedInFull", type, both, count);
 			var JBM = RunSinglePass(false, "BakedInMinimal", type, both, count);

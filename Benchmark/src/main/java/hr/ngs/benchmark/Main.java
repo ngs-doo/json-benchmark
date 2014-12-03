@@ -269,7 +269,7 @@ public class Main {
 		DateTime now = DateTime.now();
 		long size = 0;
 		hr.ngs.benchmark.LargeObjects.Genre[] genresEnum = hr.ngs.benchmark.LargeObjects.Genre.values();
-		byte[] result = null;
+		byte[] result;
 		ArrayList<byte[]> illustrations = new ArrayList<byte[]>();
 		Random rnd = new Random(1);
 		for (int i = 0; i < 10; i++) {
