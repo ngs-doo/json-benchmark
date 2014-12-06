@@ -13,6 +13,15 @@ namespace GatherResults
 
 		static void Main(string[] args)
 		{
+			if (args.Length == 2 && args[0] == "import" && File.Exists(args[1]))
+			{
+				File.Copy("template.xlsx", "results.xlsx", true);
+				var vms = JsonConvert.DeserializeObject<ViewModel[]>(File.ReadAllText(args[1]));
+				using (var doc = NGS.Templater.Configuration.Factory.Open("results.xlsx"))
+					doc.Process(vms);
+				Process.Start("results.xlsx");
+				return;
+			}
 			if (args.Length > 0) BenchPath = args[0];
 			bool exeExists = File.Exists(Path.Combine(BenchPath, "JsonBenchmark.exe"));
 			bool jarExists = File.Exists(Path.Combine(BenchPath, "json-benchmark.jar"));
@@ -296,6 +305,7 @@ namespace GatherResults
 		public string description;
 		public List<Result> serialization;
 		public List<Result> both;
+		public ViewModel() { }
 		public ViewModel(string description, Run<List<Result>> run)
 			: this(description, run.Serialization, run.Both) { }
 		private ViewModel(string description, List<Result> serialization, List<Result> both)
