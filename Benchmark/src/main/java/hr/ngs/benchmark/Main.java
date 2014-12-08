@@ -6,17 +6,21 @@ import com.dslplatform.client.json.JsonObject;
 import com.dslplatform.client.json.JsonReader;
 import com.dslplatform.client.json.JsonWriter;
 import com.dslplatform.patterns.ServiceLocator;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.util.*;
 
 public class Main {
 
 	static enum BenchTarget {
-		BakedInFull, BakedInMinimal, Jackson
+		BakedInFull, BakedInMinimal, Jackson, JacksonAfterburner
 	}
 
 	enum BenchSize {
@@ -43,7 +47,7 @@ public class Main {
 	}
 
 	public static void main(String[] args) throws Exception {
-		//args = new String[]{"BakedInMinimal", "Standard", "Both", "100"};
+		//args = new String[]{"JacksonAfterburner", "Small", "Both", "100000"};
 		if (args.length != 4) {
 			System.out.printf(
 					"Expected usage: java -jar json-benchamrk.jar (%s) (%s) (%s)",
@@ -87,6 +91,8 @@ public class Main {
 		Serializer serializer;
 		if (target == BenchTarget.Jackson) {
 			serializer = setupJackson(locator);
+		} else if (target == BenchTarget.JacksonAfterburner) {
+			serializer = setupJacksonAfterburner(locator);
 		} else if (target == BenchTarget.BakedInFull) {
 			serializer = setupDslClient(locator, false);
 		} else {
@@ -383,6 +389,30 @@ public class Main {
 			@Override
 			public <T> T deserialize(Class<T> manifest, byte[] input) throws IOException {
 				return json.deserialize(manifest, input);
+			}
+		};
+	}
+
+	static Serializer setupJacksonAfterburner(ServiceLocator locator) throws IOException, NoSuchFieldException, IllegalAccessException {
+		final JsonSerialization json = locator.resolve(JsonSerialization.class);
+		Field serializationField = JsonSerialization.class.getDeclaredField("serializationMapper");
+		Field deserializationField = JsonSerialization.class.getDeclaredField("deserializationMapper");
+		serializationField.setAccessible(true);
+		deserializationField.setAccessible(true);
+		final ObjectMapper serializer = (ObjectMapper) serializationField.get(null);
+		final ObjectMapper deserializer = (ObjectMapper) deserializationField.get(json);
+		serializer.registerModule(new AfterburnerModule());
+		deserializer.registerModule(new AfterburnerModule());
+		final ObjectWriter writer = serializer.writer();
+		return new Serializer() {
+			@Override
+			public byte[] serialize(JsonObject arg) throws IOException {
+				return writer.writeValueAsBytes(arg);
+			}
+
+			@Override
+			public <T> T deserialize(Class<T> manifest, byte[] input) throws IOException {
+				return deserializer.readValue(input, manifest);
 			}
 		};
 	}
