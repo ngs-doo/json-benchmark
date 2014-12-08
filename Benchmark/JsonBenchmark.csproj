@@ -35,6 +35,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="fastjson">
+      <HintPath>..\app\fastjson.dll</HintPath>
+    </Reference>
     <Reference Include="Jil">
       <HintPath>..\app\Jil.dll</HintPath>
     </Reference>
@@ -67,6 +70,9 @@
     </Reference>
     <Reference Include="ServerModel">
       <HintPath>lib\ServerModel.dll</HintPath>
+    </Reference>
+    <Reference Include="ServiceStack.Text">
+      <HintPath>..\app\ServiceStack.Text.dll</HintPath>
     </Reference>
     <Reference Include="Sigil">
       <HintPath>..\app\Sigil.dll</HintPath>

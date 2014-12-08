@@ -16,7 +16,7 @@ namespace JsonBenchmark
 	{
 		enum BenchTarget
 		{
-			BakedInFull, BakedInMinimal, ProtoBuf, NewtonsoftJson, Jil
+			BakedInFull, BakedInMinimal, ProtoBuf, NewtonsoftJson, Jil, fastJSON, ServiceStack
 		}
 
 		enum BenchSize
@@ -31,7 +31,7 @@ namespace JsonBenchmark
 
 		static void Main(string[] args)
 		{
-			//args = new[] { "Jil", "Small", "Both", "1" };
+			//args = new[] { "fastJSON", "Standard", "Check", "1000000" };
 			if (args.Length != 4)
 			{
 				Console.WriteLine(
@@ -74,6 +74,12 @@ namespace JsonBenchmark
 					break;
 				case BenchTarget.Jil:
 					SetupJil(out serialize, out deserialize);
+					break;
+				case BenchTarget.fastJSON:
+					SetupFastJson(out serialize, out deserialize);
+					break;
+				case BenchTarget.ServiceStack:
+					SetupServiceStack(out serialize, out deserialize);
 					break;
 				case BenchTarget.ProtoBuf:
 					SetupRevenj(out serialize, out deserialize, "application/x-protobuf");
@@ -396,6 +402,23 @@ namespace JsonBenchmark
 				sw.Flush();
 			};
 			deserialize = (stream, type) => Jil.JSON.Deserialize(stream.GetReader(), type);
+		}
+
+		static void SetupFastJson(out Action<object, ChunkedMemoryStream> serialize, out Func<ChunkedMemoryStream, Type, object> deserialize)
+		{
+			serialize = (obj, stream) =>
+			{
+				var sw = stream.GetWriter();
+				sw.Write(fastJSON.JSON.ToJSON(obj));
+				sw.Flush();
+			};
+			deserialize = (stream, type) => fastJSON.JSON.ToObject(stream.GetReader().ReadToEnd(), type);
+		}
+
+		static void SetupServiceStack(out Action<object, ChunkedMemoryStream> serialize, out Func<ChunkedMemoryStream, Type, object> deserialize)
+		{
+			serialize = (obj, stream) => ServiceStack.Text.JsonSerializer.SerializeToStream(obj, stream);
+			deserialize = (stream, type) => ServiceStack.Text.JsonSerializer.DeserializeFromStream(type, stream);
 		}
 	}
 }
