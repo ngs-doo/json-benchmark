@@ -98,7 +98,7 @@ It's interesting to see how Mono handles itself in these tests.
 
 ![Only just slower](results/mono-small-post.png)
 
-Mono is known to have few issues. First picture shows what to expect if we hit one of those. In best case, it's only couple of times slower than .NET. *It will be interesting to find out what exactly is causing massive slowdown in deserialization.*
+Mono is known to have few issues. First picture shows what to expect if we hit one of those. In best case, it's only couple of times slower than .NET. *This particular slowdown is caused by poor decimal implementation in Mono and long standing bug of trailing zeros on decimal.*
 
 ###Full results
 
