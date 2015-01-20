@@ -7,6 +7,7 @@
 		string? reason;
 		long[]? versions; //Issue: ProtoBuf doesn't differentiate empty array from null
 		PostState? state;
+		list<bool?>? votes; //Issue: list<bool?> required Protobuf modification
 	}
 	enum PostState {
 		Draft;

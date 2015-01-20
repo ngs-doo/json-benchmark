@@ -1,5 +1,4 @@
 ﻿using Revenj.Extensibility;
-using Revenj.Logging;
 using Revenj.Serialization;
 using Revenj.Utility;
 using System;
@@ -31,7 +30,7 @@ namespace JsonBenchmark
 
 		static void Main(string[] args)
 		{
-			//args = new[] { "fastJSON", "Standard", "Check", "1000000" };
+			//args = new[] { "ProtoBuf", "Standard", "Check", "100" };
 			if (args.Length != 4)
 			{
 				Console.WriteLine(
@@ -147,7 +146,7 @@ namespace JsonBenchmark
 		static void TestSmall(int repeat, Action<object, ChunkedMemoryStream> serialize, Func<ChunkedMemoryStream, Type, object> deserialize, BenchType type)
 		{
 			var ms = new ChunkedMemoryStream();
-			var now = DateTime.Now;
+			var now = DateTime.UtcNow;
 			var sw = Stopwatch.StartNew();
 			int incorrect = 0;
 			long size = 0;
@@ -196,7 +195,7 @@ namespace JsonBenchmark
 			for (int i = 0; i < repeat; i++)
 			{
 				ms.SetLength(0);
-				var post = new SmallObjects.Post { text = "some text for post " + i, title = "some title " + i, created = now.AddMinutes(i).Date };
+				var post = new SmallObjects.Post { title = "some title " + i, active = i % 2 == 0, created = now.AddMinutes(i).Date };
 				if (type == BenchType.None) continue;
 				serialize(post, ms);
 				size += ms.Position;
@@ -219,7 +218,7 @@ namespace JsonBenchmark
 			var ms = new ChunkedMemoryStream();
 			int incorrect = 0;
 			long size = 0;
-			var now = DateTime.Now.ToUniversalTime();
+			var now = DateTime.UtcNow;
 			var guids = Enumerable.Range(0, 100).Select(it => Guid.NewGuid()).ToArray();
 			var sw = Stopwatch.StartNew();
 			for (int i = 0; i < repeat; i++)
@@ -233,6 +232,12 @@ namespace JsonBenchmark
 					delete.versions = new long[i % 100 + 1];//ProtoBuf hack - always add object since Protobuf can't differentiate
 					for (int x = 0; x <= i % 100; x++)
 						delete.versions[x] = i * x + x;
+				}
+				if (i % 2 == 0 && i % 10 != 0)
+				{
+					delete.votes = new List<bool?>();
+					for (int j = 0; j < i % 10; j++)
+						delete.votes.Add((i + j) % 3 == 0 ? true : j % 2 == 0 ? (bool?)false : null);
 				}
 				if (type == BenchType.None) continue;
 				serialize(delete, ms);
@@ -297,7 +302,7 @@ namespace JsonBenchmark
 			var ms = new ChunkedMemoryStream();
 			var illustrations = new List<byte[]>();
 			var rnd = new Random(1);
-			var now = DateTime.Now.ToUniversalTime();
+			var now = DateTime.UtcNow;
 			long size = 0;
 			for (int i = 0; i < 10; i++)
 			{
@@ -366,15 +371,10 @@ namespace JsonBenchmark
 			ReportStatsAndRestart(sw, size, incorrect);
 		}
 
-		class MockLog : ILogFactory
-		{
-			public ILogger Create(string name) { return null; }
-		}
-
 		static void SetupRevenj(out Action<object, ChunkedMemoryStream> serialize, out Func<ChunkedMemoryStream, Type, object> deserialize, string contentType)
 		{
 			var binder = new GenericDeserializationBinder(new Lazy<ITypeResolver>(() => null));
-			IWireSerialization serialization = new WireSerialization(new MockLog(), binder);
+			IWireSerialization serialization = new WireSerialization(binder);
 			serialize = (obj, stream) => serialization.Serialize(obj, contentType, stream);
 			deserialize = (stream, type) => serialization.Deserialize(stream, type, contentType, default(StreamingContext));
 		}
@@ -386,11 +386,11 @@ namespace JsonBenchmark
 			serializer.TypeNameHandling = Newtonsoft.Json.TypeNameHandling.Auto;
 			serialize = (obj, stream) =>
 			{
-				var sw = stream.GetWriter();
+				var sw = new Newtonsoft.Json.JsonTextWriter(stream.GetWriter());
 				serializer.Serialize(sw, obj);
 				sw.Flush();
 			};
-			deserialize = (stream, type) => serializer.Deserialize(stream.GetReader(), type);
+			deserialize = (stream, type) => serializer.Deserialize(new Newtonsoft.Json.JsonTextReader(stream.GetReader()), type);
 		}
 
 		static void SetupJil(out Action<object, ChunkedMemoryStream> serialize, out Func<ChunkedMemoryStream, Type, object> deserialize)

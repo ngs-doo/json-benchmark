@@ -1,8 +1,8 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using Newtonsoft.Json;
 
 namespace GatherResults
 {
@@ -181,17 +181,17 @@ namespace GatherResults
 
 		static AggregatePass GetherDuration(string type, bool both, int count)
 		{
-			RunSinglePass(true, "BakedInMinimal", type, null, 1); //warmup
-			var Net = RunSinglePass(true, "BakedInMinimal", type, null, count);
-			var NJ = RunSinglePass(true, "NewtonsoftJson", type, both, count);
-			var NBF = RunSinglePass(true, "BakedInFull", type, both, count);
-			var NBM = RunSinglePass(true, "BakedInMinimal", type, both, count);
-			var NP = RunSinglePass(true, "ProtoBuf", type, both, count);
-			RunSinglePass(false, "BakedInMinimal", type, null, 1); //warmup
-			var Jvm = RunSinglePass(false, "BakedInMinimal", type, null, count);
-			var JJ = RunSinglePass(false, "Jackson", type, both, count);
-			var JBF = RunSinglePass(false, "BakedInFull", type, both, count);
-			var JBM = RunSinglePass(false, "BakedInMinimal", type, both, count);
+			RunSinglePass("Warmup .NET", true, "BakedInMinimal", type, null, 1);
+			var Net = RunSinglePass("Instance .NET", true, "BakedInMinimal", type, null, count);
+			var NJ = RunSinglePass("NewtonsoftJson", true, "NewtonsoftJson", type, both, count);
+			var NBF = RunSinglePass("Revenj full", true, "BakedInFull", type, both, count);
+			var NBM = RunSinglePass("Revenj minimal", true, "BakedInMinimal", type, both, count);
+			var NP = RunSinglePass("Protobuf.NET", true, "ProtoBuf", type, both, count);
+			RunSinglePass("Warmup JVM", false, "BakedInMinimal", type, null, 1); //warmup
+			var Jvm = RunSinglePass("Instance JVM", false, "BakedInMinimal", type, null, count);
+			var JJ = RunSinglePass("Jackson", false, "Jackson", type, both, count);
+			var JBF = RunSinglePass("DSL client Java full", false, "BakedInFull", type, both, count);
+			var JBM = RunSinglePass("DSL client Java minimal", false, "BakedInMinimal", type, both, count);
 			return new AggregatePass
 			{
 				Net = Net,
@@ -206,7 +206,7 @@ namespace GatherResults
 			};
 		}
 
-		static List<Stats> RunSinglePass(bool exe, string serializer, string type, bool? both, int count)
+		static List<Stats> RunSinglePass(string description, bool exe, string serializer, string type, bool? both, int count)
 		{
 			var processName = exe ? Path.Combine(BenchPath, "JsonBenchmark.exe") : Path.Combine(JavaPath ?? ".", "bin", "java");
 			var jarArg = exe ? string.Empty : "-jar \"" + Path.Combine(BenchPath, "json-benchmark.jar") + "\" ";
@@ -239,7 +239,7 @@ namespace GatherResults
 				var duration = lines[i * 3].Split('=');
 				var size = lines[i * 3 + 1].Split('=');
 				var errors = lines[i * 3 + 2].Split('=');
-				Console.WriteLine(serializer + ": duration = " + duration[1].Trim() + ", size = " + size[1].Trim() + ", errors = " + errors[1].Trim());
+				Console.WriteLine(description + ": duration = " + duration[1].Trim() + ", size = " + size[1].Trim() + ", errors = " + errors[1].Trim());
 				result.Add(new Stats { Duration = int.Parse(duration[1]), Size = long.Parse(size[1]) });
 			}
 			return result;

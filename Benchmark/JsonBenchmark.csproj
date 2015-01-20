@@ -56,9 +56,6 @@
     <Reference Include="Revenj.Extensibility.Interface">
       <HintPath>..\app\Revenj.Extensibility.Interface.dll</HintPath>
     </Reference>
-    <Reference Include="Revenj.Logging.Interface">
-      <HintPath>..\app\Revenj.Logging.Interface.dll</HintPath>
-    </Reference>
     <Reference Include="Revenj.Utility">
       <HintPath>..\app\Revenj.Utility.dll</HintPath>
     </Reference>

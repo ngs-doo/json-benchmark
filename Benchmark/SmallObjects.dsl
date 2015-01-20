@@ -3,9 +3,9 @@
 		string message;
 		int version;
 	}
-	root Post {
+	guid root Post {
 		string title;
-		string text;
+		bool active;
 		date created;
 	}
 	value Complex {

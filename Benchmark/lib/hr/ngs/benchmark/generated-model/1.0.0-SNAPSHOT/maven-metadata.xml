@@ -1,25 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<metadata modelVersion="1.1.0">
+<metadata>
   <groupId>hr.ngs.benchmark</groupId>
   <artifactId>generated-model</artifactId>
   <version>1.0.0-SNAPSHOT</version>
   <versioning>
     <snapshot>
-      <timestamp>20141203.211311</timestamp>
-      <buildNumber>1</buildNumber>
+      <timestamp>20150120.144222</timestamp>
+      <buildNumber>10</buildNumber>
     </snapshot>
-    <lastUpdated>20141203211311</lastUpdated>
-    <snapshotVersions>
-      <snapshotVersion>
-        <extension>jar</extension>
-        <value>1.0.0-20141203.211311-1</value>
-        <updated>20141203211311</updated>
-      </snapshotVersion>
-      <snapshotVersion>
-        <extension>pom</extension>
-        <value>1.0.0-20141203.211311-1</value>
-        <updated>20141203211311</updated>
-      </snapshotVersion>
-    </snapshotVersions>
+    <lastUpdated>20150120144222</lastUpdated>
   </versioning>
 </metadata>

@@ -1,10 +1,10 @@
 ##.NET vs JVM Json serialization
 
-In yet another benchmark, we will put up most popular .NET library - Newtonsoft.Json against most popular (fastest?) JVM library - Jackson and DSL Platform baked in serialization (both with all properties serialized and only properties with non-default values).
+This is reference benchmark for the fastest Json serialization libraries in .NET and JVM. It includes most popular libraries (Newtonsoft.Json and Jackson) to show difference between libraries for various scenarios.
 
-We'll be testing variety of models, from small simple objects, to very complex large objects; with different number of loops.
+Variety of models are tested, from small simple objects, to very complex large objects; with different number of loops.
 
-Originally more libraries were tested, but since they don't support advanced features and some even fail to serialize simple objects (due to need for reflection) they were removed.
+More libraries are included in the benchmark, but not included in the result, since they are unable to correctly complete the tests.
 
 To give more interesting results, we'll also run tests on Mono to see how it compares to JVM/.NET.
 
@@ -30,10 +30,10 @@ To give more interesting results, we'll also run tests on Mono to see how it com
 ###Libraries
 
  * Newtonsoft.Json 6.0.6 - most popular Nuget package
- * Revenj.Json (1.1.3) (baked in serialization code) - DSL Platform bakes in serialization directly into the model. Revenj Json converters are used for serialization and deserialization 
- * Protobuf.NET (Revenj 1.1.3) - default Revenj Protobuf serialization which uses modified Protobuf-net library (various bugfixes and changes - to support dynamic serialization)
+ * Revenj.Json (1.2.0) (baked in serialization code) - DSL Platform bakes in serialization directly into the C# classes. Revenj Json converters are used for serialization and deserialization 
+ * Protobuf.NET (Revenj 1.2.0) - default Revenj Protobuf serialization which uses modified Protobuf-net library (various bugfixes and changes - to support dynamic serialization, nullable struct collections,...)
  * Jackson 2.4.3 - most popular JVM Json serializer
- * DSL client Java (1.1.1) - DSL Platform baked in serialization into Java classes
+ * DSL client Java (1.2.0) - DSL Platform baked in serialization into Java classes. DSL client java converters are used for serialization and deserialization
  
 ###Startup times
 
@@ -74,7 +74,7 @@ Non-trivial model should reflect most CRUD scenarios with documents. This exampl
 
 ![Non-trivial objects duration](results/non-trivial-objects.png)
 
-Even on smaller number of runs, .NET is not much faster anymore. Again, after HotSpot optimizations JVM seems to be somewhat faster. Same optimizations could not be used for baked in libraries due to different APIs on .NET Framework and Java (without a massive code increase).
+Even on smaller number of runs, .NET is not faster anymore. This is partly due to heavy optimizations in the JVM library. Again, after HotSpot optimizations JVM seems to be several times faster. Same optimizations could not be used for baked in libraries due to different APIs on .NET Framework and Java (without a massive code increase).
 
 ###Large model
 
@@ -84,7 +84,7 @@ Large model contains several advanced features, such as interface serialization,
 
 ![Large objects duration](results/large-objects.png)
 
-Results seem to be consistent regardless of the number of loops. .NET takes much more time to construct object instances. It's interesting to see that Jackson takes the win here since due to heavy usage of byte[].
+Results seem to be consistent regardless of the number of loops. .NET takes much more time to construct object instances. Results are consistent with previous tests.
 
 ###Mono comparison
 
@@ -130,8 +130,8 @@ Invalid deserialization will be detected only if **Check** argument is used.
 ###Conclusions
 
 * JVM seems to always be faster after optimization kicks-in.
-* Newtonsoft.Json is comparable with Jackson on features, but not in speed (at least relative to baked in serialization which can be considered baseline).
-* Baked in serialization is not a replacement for generic JSON libraries (think of it as schema based serialization, not attribute based one).
+* Newtonsoft.Json is comparable with Jackson on features and almost in speed (at least relative to baked in serialization which can be considered baseline).
+* Baked in serialization is not a replacement for generic JSON libraries (think of it as schema based serialization, not attribute based one), but it's several times faster than other serialization libraries.
 * One test focuses on sparse objects to show difference between excluding default parameters from JSON. It doesn't seem to be worth it - at least to differences gained in other ways.
 * Non UTC DateTime can cause really slow serialization on .NET
 * Mono has **slowspots** - really unoptimized parts of it.

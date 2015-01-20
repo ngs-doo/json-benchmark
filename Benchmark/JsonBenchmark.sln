@@ -8,15 +8,13 @@ EndProject
 Global
 	GlobalSection(DslPlatformSolutionProperties) = preSolution
 		ConnectionString = server=localhost;database=Benchmark;user=revenj;password=revenj
-		PostgresMigration = True
-		ApplyMigration = True
+		PostgresMigration = False
+		ApplyMigration = False
 		SqlScriptsPath = ..\SQL
-		ServerLibrary.Compile = True
-		ServerLibrary.Dependencies = ..\app
-		ServerLibrary.WithManualJson = True
-		ConfirmUnsafeChanges = False
-		DiffBeforeCompile = True
-		AutoLogin = False
+		Server.Compile = True
+		Server.Target = ..\app
+		Server.WithManualJson = True
+		OfflineCompiler = dsl-compiler.exe
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86

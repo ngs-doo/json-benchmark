@@ -35,7 +35,7 @@ public class Main {
 		StringBuilder sb = new StringBuilder();
 		sb.append(enums[0].name());
 		for (int i = 1; i < enums.length; i++) {
-			sb.append(" | " + enums[i].name());
+			sb.append(" | ").append(enums[i].name());
 		}
 		return sb.toString();
 	}
@@ -43,6 +43,7 @@ public class Main {
 	static class Bytes {
 		public final byte[] content;
 		public final int length;
+
 		public Bytes(byte[] content, int length) {
 			this.content = content;
 			this.length = length;
@@ -56,7 +57,7 @@ public class Main {
 	}
 
 	public static void main(String[] args) throws Exception {
-		//args = new String[]{"BakedInMinimal", "Large", "Both", "100"};
+		//args = new String[]{"BakedInMinimal", "Large", "Check", "100"};
 		if (args.length != 4) {
 			System.out.printf(
 					"Expected usage: java -jar json-benchamrk.jar (%s) (%s) (%s) n",
@@ -191,8 +192,8 @@ public class Main {
 		incorrect = 0;
 		for (int i = 0; i < repeat; i++) {
 			hr.ngs.benchmark.SmallObjects.Post post = new hr.ngs.benchmark.SmallObjects.Post();
-			post.setText("some text for post " + i);
 			post.setTitle("some title " + i);
+			post.setActive(i % 2 == 0);
 			post.setCreated(now.plusSeconds(i).toLocalDate());
 			if (type == BenchType.None) continue;
 			result = serializer.serialize(post);
@@ -232,9 +233,14 @@ public class Main {
 				for (int x = 0; x <= i % 100; x++)
 					delete.getVersions()[x] = i * x + x;
 			}
+			if (i % 2 == 0 && i % 10 != 0) {
+				delete.setVotes(new ArrayList<Boolean>());
+				for (int j = 0; j < i % 10; j++) {
+					delete.getVotes().add((i + j) % 3 == 0 ? Boolean.TRUE : j % 2 == 0 ? Boolean.FALSE : null);
+				}
+			}
 			if (type == BenchType.None) continue;
 			result = serializer.serialize(delete);
-			//System.out.println(new String(result, "UTF-8"));
 			size += result.length;
 			if (type == BenchType.Both || type == BenchType.Check) {
 				hr.ngs.benchmark.StandardObjects.DeletePost deser = serializer.deserialize(hr.ngs.benchmark.StandardObjects.DeletePost.class, result);
@@ -337,11 +343,10 @@ public class Main {
 			}
 			if (type == BenchType.None) continue;
 			result = serializer.serialize(book);
-			//System.out.println(new String(result, "UTF-8"));
 			size += result.length;
 			if (type == BenchType.Both || type == BenchType.Check) {
 				hr.ngs.benchmark.LargeObjects.Book deser = serializer.deserialize(hr.ngs.benchmark.LargeObjects.Book.class, result);
-				if (type == BenchType.Check && !book.equals(deser)) { //TODO: this doesn't actually work as expected yet
+				if (type == BenchType.Check && !book.equals(deser)) {
 					incorrect++;
 					//throw new SerializationException("not equal");
 				}
@@ -373,6 +378,7 @@ public class Main {
 			public Bytes serialize(JsonObject arg) throws IOException {
 				arg.serialize(sw, minimal);
 				JsonWriter.Bytes bytes = sw.toBytes();
+				sw.reset();
 				return new Bytes(bytes.content, bytes.length);
 			}
 
@@ -382,6 +388,7 @@ public class Main {
 				JsonReader.ReadJsonObject<JsonObject> reader = getReader(manifest);
 				JsonReader json = new JsonReader(input.content, input.length, locator);
 				if (json.getNextToken() == '{') {
+					json.getNextToken();
 					return (T) reader.deserialize(json, locator);
 				} else throw new IOException("Expecting {");
 			}
