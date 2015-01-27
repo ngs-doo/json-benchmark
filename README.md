@@ -40,7 +40,7 @@ To give more interesting results, we'll also run tests on Mono to see how it com
 It's known issue that serialization libraries suffer from startup time, since they need to build and cache parsers for types.
 Let's see how much of an issue that is:
 
-    Small 1 (Message)
+    Large 1 (Book)
 
 ![Startup times](results/startup-times.png)
 
@@ -104,7 +104,7 @@ Mono is known to have few issues. First picture shows what to expect if we hit o
 
 Intel(R) Core(TM) i5-4440 CPU @ 3.10GHz / 32GB RAM
 
-.NET 4.5.1, Mono 3.12, JVM 1.8.25
+.NET 4.5.1, Mono 3.12, JVM 1.8.31
 
 Results for [Windows](results/results-windows.xlsx).
 Results for [Linux](results/results-linux.xlsx).
