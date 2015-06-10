@@ -404,14 +404,14 @@ namespace JsonBenchmark
 			}
 			serialize = (obj, stream) =>
 			{
-				var output = new OutputStream(stream);
+				var output = new OutputStream(stream, 512);
 				var writer = new FastBinaryWriter<OutputStream>(output);
 				serializers[obj.GetType()].Serialize(obj, writer);
 				output.Flush();
 			};
 			deserialize = (stream, type) =>
 			{
-				var input = new InputStream(stream);
+				var input = new InputStream(stream, 512);
 				var reader = new FastBinaryReader<InputStream>(input);
 				return deserializers[type].Deserialize(reader);
 			};
