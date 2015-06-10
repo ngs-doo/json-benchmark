@@ -1,4 +1,6 @@
-﻿using Revenj.Extensibility;
+﻿using Bond.IO.Unsafe;
+using Bond.Protocols;
+using Revenj.Extensibility;
 using Revenj.Serialization;
 using Revenj.Utility;
 using System;
@@ -15,7 +17,7 @@ namespace JsonBenchmark
 	{
 		enum BenchTarget
 		{
-			BakedInFull, BakedInMinimal, ProtoBuf, NewtonsoftJson, Jil, fastJSON, ServiceStack
+			BakedInFull, BakedInMinimal, ProtoBuf, NewtonsoftJson, Jil, fastJSON, ServiceStack, BondJson, BondBinary
 		}
 
 		enum BenchSize
@@ -30,7 +32,12 @@ namespace JsonBenchmark
 
 		static void Main(string[] args)
 		{
-			//args = new[] { "ProtoBuf", "Standard", "Check", "100" };
+			//args = new[] { "ProtoBuf", "Small", "Serialization", "1000000" };
+			//args = new[] { "BakedInMinimal", "Small", "Check", "1000" };
+			//args = new[] { "BondJson", "Small", "Both", "100000" };
+			//args = new[] { "BondBinary", "Small", "Both", "100" };
+			//args = new[] { "Jil", "Small", "Serialization", "10000000" };
+			//args = new[] { "NewtonsoftJson", "Small", "Serialization", "10000000" };
 			if (args.Length != 4)
 			{
 				Console.WriteLine(
@@ -71,6 +78,12 @@ namespace JsonBenchmark
 				case BenchTarget.NewtonsoftJson:
 					SetupNewtonsoftJson(out serialize, out deserialize);
 					break;
+				case BenchTarget.BondJson:
+					SetupBondJson(out serialize, out deserialize);
+					break;
+				case BenchTarget.BondBinary:
+					SetupBondBinary(out serialize, out deserialize);
+					break;
 				case BenchTarget.Jil:
 					SetupJil(out serialize, out deserialize);
 					break;
@@ -95,7 +108,14 @@ namespace JsonBenchmark
 				case BenchSize.Small:
 					try
 					{
-						TestSmall(repeat, serialize, deserialize, type);
+						if (target == BenchTarget.BondBinary || target == BenchTarget.BondJson)
+						{
+							TestSmallBond(repeat, type, serialize, deserialize);
+						}
+						else
+						{
+							TestSmall(repeat, serialize, deserialize, type);
+						}
 					}
 					catch (Exception ex)
 					{
@@ -143,67 +163,29 @@ namespace JsonBenchmark
 				sw.Restart();
 		}
 
-		static void TestSmall(int repeat, Action<object, ChunkedMemoryStream> serialize, Func<ChunkedMemoryStream, Type, object> deserialize, BenchType type)
+		private static void RunLoop<T>(
+			int repeat,
+			Action<object, ChunkedMemoryStream> serialize,
+			Func<ChunkedMemoryStream, Type, object> deserialize,
+			BenchType type,
+			ChunkedMemoryStream ms,
+			Func<int, T> factory)
 		{
-			var ms = new ChunkedMemoryStream();
-			var now = DateTime.UtcNow;
 			var sw = Stopwatch.StartNew();
-			int incorrect = 0;
+			var incorrect = 0;
 			long size = 0;
 			for (int i = 0; i < repeat; i++)
 			{
 				ms.SetLength(0);
-				var message = new SmallObjects.Message { message = "some message " + i, version = i };
+				var message = factory(i);
 				if (type == BenchType.None) continue;
 				serialize(message, ms);
 				size += ms.Position;
 				if (type == BenchType.Both || type == BenchType.Check)
 				{
 					ms.Position = 0;
-					var deser = (SmallObjects.Message)deserialize(ms, typeof(SmallObjects.Message));
+					var deser = (T)deserialize(ms, typeof(T));
 					if (type == BenchType.Check && !message.Equals(deser))
-					{
-						incorrect++;
-						//throw new SerializationException("not equal");
-					}
-				}
-			}
-			ReportStatsAndRestart(sw, size, incorrect);
-			size = 0;
-			incorrect = 0;
-			for (int i = 0; i < repeat; i++)
-			{
-				ms.SetLength(0);
-				var complex = new SmallObjects.Complex { x = i / 1000m, y = -i / 1000f, z = i };
-				if (type == BenchType.None) continue;
-				serialize(complex, ms);
-				size += ms.Position;
-				if (type == BenchType.Both || type == BenchType.Check)
-				{
-					ms.Position = 0;
-					var deser = (SmallObjects.Complex)deserialize(ms, typeof(SmallObjects.Complex));
-					if (type == BenchType.Check && !deser.Equals(complex))
-					{
-						incorrect++;
-						//throw new SerializationException("not equal");
-					}
-				}
-			}
-			ReportStatsAndRestart(sw, size, incorrect);
-			size = 0;
-			incorrect = 0;
-			for (int i = 0; i < repeat; i++)
-			{
-				ms.SetLength(0);
-				var post = new SmallObjects.Post { title = "some title " + i, active = i % 2 == 0, created = now.AddMinutes(i).Date };
-				if (type == BenchType.None) continue;
-				serialize(post, ms);
-				size += ms.Position;
-				if (type == BenchType.Both || type == BenchType.Check)
-				{
-					ms.Position = 0;
-					var deser = (SmallObjects.Post)deserialize(ms, typeof(SmallObjects.Post));
-					if (type == BenchType.Check && !deser.Equals(post))
 					{
 						incorrect++;
 						//throw new SerializationException("not equal");
@@ -213,17 +195,48 @@ namespace JsonBenchmark
 			ReportStatsAndRestart(sw, size, incorrect);
 		}
 
+		static void TestSmall(
+			int repeat,
+			Action<object, ChunkedMemoryStream> serialize,
+			Func<ChunkedMemoryStream, Type, object> deserialize,
+			BenchType type)
+		{
+			var ms = new ChunkedMemoryStream();
+			var now = DateTime.UtcNow;
+			RunLoop(repeat, serialize, deserialize, type, ms, i => new SmallObjects.Message { message = "some message " + i, version = i });
+			RunLoop(repeat, serialize, deserialize, type, ms, i => new SmallObjects.Complex { x = i / 1000m, y = -i / 1000f, z = i });
+			RunLoop(repeat, serialize, deserialize, type, ms, i => new SmallObjects.Post { title = "some title " + i, active = i % 2 == 0, created = now.AddMinutes(i).Date });
+		}
+
+		static void TestSmallBond(
+			int repeat,
+			BenchType type,
+			Action<object, ChunkedMemoryStream> serialize,
+			Func<ChunkedMemoryStream, Type, object> deserialize)
+		{
+			var ms = new ChunkedMemoryStream();
+			var now = DateTime.UtcNow;
+			RunLoop(repeat, serialize, deserialize, type, ms, i => new SmallObjects.Bond.Message { message = "some message " + i, version = i });
+			RunLoop(repeat, serialize, deserialize, type, ms, i => new SmallObjects.Bond.Complex { x = i / 1000m, y = -i / 1000f, z = i });
+			RunLoop(repeat, serialize, deserialize, type, ms, i =>
+				new SmallObjects.Bond.Post
+				{
+					URI = new object().GetHashCode().ToString(),
+					ID = SmallObjects.Bond.BondTypeAliasConverter.Convert(Guid.NewGuid(), new SmallObjects.Bond.GUID()),
+					title = "some title " + i,
+					active = i % 2 == 0,
+					created = now.AddMinutes(i).Date
+				}
+			);
+		}
+
 		static void TestStandard(int repeat, Action<object, ChunkedMemoryStream> serialize, Func<ChunkedMemoryStream, Type, object> deserialize, BenchType type)
 		{
 			var ms = new ChunkedMemoryStream();
-			int incorrect = 0;
-			long size = 0;
 			var now = DateTime.UtcNow;
 			var guids = Enumerable.Range(0, 100).Select(it => Guid.NewGuid()).ToArray();
-			var sw = Stopwatch.StartNew();
-			for (int i = 0; i < repeat; i++)
+			RunLoop(repeat, serialize, deserialize, type, ms, i =>
 			{
-				ms.SetLength(0);
 				var delete = new StandardObjects.DeletePost { postID = i, deletedBy = i / 100, lastModified = now.AddSeconds(i), reason = "no reason" };
 				if (i % 3 == 0) delete.referenceId = guids[i % 100];
 				if (i % 5 == 0) delete.state = (StandardObjects.PostState)(i % 3);
@@ -239,26 +252,10 @@ namespace JsonBenchmark
 					for (int j = 0; j < i % 10; j++)
 						delete.votes.Add((i + j) % 3 == 0 ? true : j % 2 == 0 ? (bool?)false : null);
 				}
-				if (type == BenchType.None) continue;
-				serialize(delete, ms);
-				size += ms.Position;
-				if (type == BenchType.Both || type == BenchType.Check)
-				{
-					ms.Position = 0;
-					var deser = (StandardObjects.DeletePost)deserialize(ms, typeof(StandardObjects.DeletePost));
-					if (type == BenchType.Check && !delete.Equals(deser))
-					{
-						incorrect++;
-						//throw new SerializationException("not equal");
-					}
-				}
-			}
-			ReportStatsAndRestart(sw, size, incorrect);
-			size = 0;
-			incorrect = 0;
-			for (int i = 0; i < repeat; i++)
+				return delete;
+			});
+			RunLoop(repeat, serialize, deserialize, type, ms, i =>
 			{
-				ms.SetLength(0);
 				var post = new StandardObjects.Post
 				{
 					approved = i % 2 == 0 ? null : (DateTime?)now.AddMilliseconds(i),
@@ -280,21 +277,8 @@ namespace JsonBenchmark
 							Index = j
 						});
 				}
-				if (type == BenchType.None) continue;
-				serialize(post, ms);
-				size += ms.Position;
-				if (type == BenchType.Both || type == BenchType.Check)
-				{
-					ms.Position = 0;
-					var deser = (StandardObjects.Post)deserialize(ms, typeof(StandardObjects.Post));
-					if (type == BenchType.Check && !post.Equals(deser))
-					{
-						incorrect++;
-						//throw new SerializationException("not equal");
-					}
-				}
-			}
-			ReportStatsAndRestart(sw, size, incorrect);
+				return post;
+			});
 		}
 
 		static void TestLarge(int repeat, Action<object, ChunkedMemoryStream> serialize, Func<ChunkedMemoryStream, Type, object> deserialize, BenchType type)
@@ -303,18 +287,14 @@ namespace JsonBenchmark
 			var illustrations = new List<byte[]>();
 			var rnd = new Random(1);
 			var now = DateTime.UtcNow;
-			long size = 0;
 			for (int i = 0; i < 10; i++)
 			{
 				var buf = new byte[256 * i * i * i];
 				rnd.NextBytes(buf);
 				illustrations.Add(buf);
 			}
-			var sw = Stopwatch.StartNew();
-			int incorrect = 0;
-			for (int i = 0; i < repeat; i++)
+			RunLoop(repeat, serialize, deserialize, type, ms, i =>
 			{
-				ms.SetLength(0);
 				var book = new LargeObjects.Book
 				{
 					authorId = i / 100,
@@ -354,21 +334,8 @@ namespace JsonBenchmark
 					}
 					book.pages.AddLast(page);
 				}
-				if (type == BenchType.None) continue;
-				serialize(book, ms);
-				size += ms.Position;
-				if (type == BenchType.Both || type == BenchType.Check)
-				{
-					ms.Position = 0;
-					var deser = (LargeObjects.Book)deserialize(ms, typeof(LargeObjects.Book));
-					if (type == BenchType.Check && !book.Equals(deser))
-					{
-						incorrect++;
-						//throw new SerializationException("not equal");
-					}
-				}
-			}
-			ReportStatsAndRestart(sw, size, incorrect);
+				return book;
+			});
 		}
 
 		static void SetupRevenj(out Action<object, ChunkedMemoryStream> serialize, out Func<ChunkedMemoryStream, Type, object> deserialize, string contentType)
@@ -402,6 +369,52 @@ namespace JsonBenchmark
 				sw.Flush();
 			};
 			deserialize = (stream, type) => Jil.JSON.Deserialize(stream.GetReader(), type);
+		}
+
+		static void SetupBondJson(out Action<object, ChunkedMemoryStream> serialize, out Func<ChunkedMemoryStream, Type, object> deserialize)
+		{
+			var serializers = new Dictionary<Type, Bond.Serializer<SimpleJsonWriter>>();
+			var deserializers = new Dictionary<Type, Bond.Deserializer<SimpleJsonReader>>();
+			foreach (var t in new[] { typeof(SmallObjects.Bond.Message), typeof(SmallObjects.Bond.Complex), typeof(SmallObjects.Bond.Post) })
+			{
+				serializers[t] = new Bond.Serializer<SimpleJsonWriter>(t);
+				deserializers[t] = new Bond.Deserializer<SimpleJsonReader>(t);
+			}
+			serialize = (obj, stream) =>
+			{
+				var jsonWriter = new SimpleJsonWriter(stream);
+				serializers[obj.GetType()].Serialize(obj, jsonWriter);
+				jsonWriter.Flush();
+			};
+			deserialize = (stream, type) =>
+			{
+				var reader = new SimpleJsonReader(stream);
+				return deserializers[type].Deserialize(reader);
+			};
+		}
+
+		static void SetupBondBinary(out Action<object, ChunkedMemoryStream> serialize, out Func<ChunkedMemoryStream, Type, object> deserialize)
+		{
+			var serializers = new Dictionary<Type, Bond.Serializer<FastBinaryWriter<OutputStream>>>();
+			var deserializers = new Dictionary<Type, Bond.Deserializer<FastBinaryReader<InputStream>>>();
+			foreach (var t in new[] { typeof(SmallObjects.Bond.Message), typeof(SmallObjects.Bond.Complex), typeof(SmallObjects.Bond.Post) })
+			{
+				serializers[t] = new Bond.Serializer<FastBinaryWriter<OutputStream>>(t);
+				deserializers[t] = new Bond.Deserializer<FastBinaryReader<InputStream>>(t);
+			}
+			serialize = (obj, stream) =>
+			{
+				var output = new OutputStream(stream);
+				var writer = new FastBinaryWriter<OutputStream>(output);
+				serializers[obj.GetType()].Serialize(obj, writer);
+				output.Flush();
+			};
+			deserialize = (stream, type) =>
+			{
+				var input = new InputStream(stream);
+				var reader = new FastBinaryReader<InputStream>(input);
+				return deserializers[type].Deserialize(reader);
+			};
 		}
 
 		static void SetupFastJson(out Action<object, ChunkedMemoryStream> serialize, out Func<ChunkedMemoryStream, Type, object> deserialize)

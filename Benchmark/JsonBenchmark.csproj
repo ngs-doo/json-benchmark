@@ -35,6 +35,18 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Bond">
+      <HintPath>..\app\Bond.dll</HintPath>
+    </Reference>
+    <Reference Include="Bond.Attributes">
+      <HintPath>..\app\Bond.Attributes.dll</HintPath>
+    </Reference>
+    <Reference Include="Bond.IO">
+      <HintPath>..\app\Bond.IO.dll</HintPath>
+    </Reference>
+    <Reference Include="Bond.JSON">
+      <HintPath>..\app\Bond.JSON.dll</HintPath>
+    </Reference>
     <Reference Include="fastjson">
       <HintPath>..\app\fastjson.dll</HintPath>
     </Reference>
@@ -84,14 +96,17 @@
     <Reference Include="System.Configuration" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="bond\BondConverters.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="bond\SmallObjects_types.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config">
       <SubType>Designer</SubType>
     </None>
     <None Include="LargeObjects.dsl" />
+    <None Include="bond\SmallObjects.bond" />
     <None Include="StandardObjects.dsl" />
   </ItemGroup>
   <ItemGroup>
