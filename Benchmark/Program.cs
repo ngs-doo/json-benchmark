@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters;
 
@@ -200,12 +199,11 @@ namespace JsonBenchmark
 			Func<ChunkedMemoryStream, Type, object> deserialize,
 			BenchType type,
 			ChunkedMemoryStream ms,
-			Func<int, T> factory)
+			Func<int, T> factory) where T : IEquatable<T>
 		{
 			var sw = Stopwatch.StartNew();
 			var incorrect = 0;
 			long size = 0;
-			var isEquatable = typeof(T).GetInterfaces().Any(it => it == typeof(IEquatable<T>));
 			for (int i = 0; i < repeat; i++)
 			{
 				ms.SetLength(0);
@@ -217,7 +215,7 @@ namespace JsonBenchmark
 				{
 					ms.Position = 0;
 					var deser = (T)deserialize(ms, typeof(T));
-					if (type == BenchType.Check && (isEquatable ? !((IEquatable<T>)message).Equals(deser) : !message.Equals(deser)))
+					if (type == BenchType.Check && !message.Equals(deser))
 					{
 						incorrect++;
 						//throw new SerializationException("not equal");
@@ -339,7 +337,7 @@ namespace JsonBenchmark
 			out Action<object, ChunkedMemoryStream> serialize,
 			out Func<ChunkedMemoryStream, Type, object> deserialize)
 		{
-			serialize = (obj, stream) => ServiceStack.Text.JsonSerializer.SerializeToStream(obj, stream);
+			serialize = (obj, stream) => ServiceStack.Text.JsonSerializer.SerializeToStream(obj, obj.GetType(), stream);
 			deserialize = (stream, type) => ServiceStack.Text.JsonSerializer.DeserializeFromStream(type, stream);
 		}
 

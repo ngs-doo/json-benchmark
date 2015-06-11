@@ -7,12 +7,18 @@ using System.Text;
 namespace JsonBenchmark.Models.Small
 {
 	[DataContract]
-	public struct Message
+	public class Message : IEquatable<Message>
 	{
 		[DataMember(Order = 1)]
 		public string message { get; set; }
 		[DataMember(Order = 2)]
 		public int version { get; set; }
+		public override int GetHashCode() { return version; }
+		public override bool Equals(object obj) { return base.Equals(obj as Message); }
+		public bool Equals(Message other)
+		{
+			return other != null && other.message == this.message && other.version == this.version;
+		}
 		public static Message FactoryPoco(int i)
 		{
 			return new Message { message = "some message " + i, version = i };
@@ -27,7 +33,7 @@ namespace JsonBenchmark.Models.Small
 		}
 	}
 	[DataContract]
-	public struct Complex
+	public class Complex : IEquatable<Complex>
 	{
 		[DataMember(Order = 1)]
 		public decimal x { get; set; }
@@ -35,6 +41,12 @@ namespace JsonBenchmark.Models.Small
 		public float y { get; set; }
 		[DataMember(Order = 3)]
 		public long z { get; set; }
+		public override int GetHashCode() { return (int)z; }
+		public override bool Equals(object obj) { return Equals(obj as Complex); }
+		public bool Equals(Complex other)
+		{
+			return other != null && other.x == this.x && other.y == this.y && other.z == this.z;
+		}
 		public static Complex FactoryPoco(int i)
 		{
 			return new Complex { x = i / 1000m, y = -i / 1000f, z = i };
@@ -63,7 +75,7 @@ namespace JsonBenchmark.Models.Small
 		public bool active { get; set; }
 		[DataMember(Order = 5)]
 		public DateTime created { get; set; }
-		public override int GetHashCode() { return URI.GetHashCode(); }
+		public override int GetHashCode() { return ID.GetHashCode(); }
 		public override bool Equals(object obj) { return Equals(obj as Post); }
 		public bool Equals(Post other)
 		{
@@ -308,7 +320,7 @@ namespace JsonBenchmark.Models.Standard
 		public string message { get; set; }
 		[DataMember(Order = 8)]
 		public Vote votes { get; set; }
-		public override int GetHashCode() { return URI.GetHashCode(); }
+		public override int GetHashCode() { return PostID ^ Index; }
 		public override bool Equals(object obj) { return Equals(obj as Comment); }
 		public bool Equals(Comment other)
 		{
@@ -318,18 +330,24 @@ namespace JsonBenchmark.Models.Standard
 		}
 	}
 	[DataContract]
-	public struct Vote
+	public class Vote : IEquatable<Vote>
 	{
 		[DataMember(Order = 1)]
 		public int upvote { get; set; }
 		[DataMember(Order = 2)]
 		public int downvote { get; set; }
+		public override int GetHashCode() { return upvote ^ downvote; }
+		public override bool Equals(object obj) { return Equals(obj as Vote); }
+		public bool Equals(Vote other)
+		{
+			return other != null && other.upvote == this.upvote && other.downvote == this.downvote;
+		}
 	}
 }
 namespace JsonBenchmark.Models.Large
 {
 	[DataContract]
-	public class Book
+	public class Book : IEquatable<Book>
 	{
 		private static DateTime NOW = DateTime.UtcNow;
 		private static List<byte[]> ILLUSTRATIONS = new List<byte[]>();
@@ -350,6 +368,7 @@ namespace JsonBenchmark.Models.Large
 			changes = new HashSet<DateTime>();
 			metadata = new Dictionary<string, string>();
 			genres = new Genre[0];
+			cover = new byte[0];//otherwise buggy ProtoBuf and some other libs
 		}
 		[DataMember(Order = 1)]
 		public string URI { get; set; }
@@ -371,6 +390,28 @@ namespace JsonBenchmark.Models.Large
 		public Dictionary<string, string> metadata { get; set; }
 		[DataMember(Order = 10)]
 		public Genre[] genres { get; set; }
+		public override int GetHashCode() { return ID; }
+		public override bool Equals(object obj) { return Equals(obj as Book); }
+		public bool Equals(Book other)
+		{
+			var otherChanges = other != null ? other.changes.ToList() : null;
+			var thisChanges = changes.ToList();
+			if (otherChanges != null) otherChanges.Sort();
+			thisChanges.Sort();
+			var otherKeys = other != null ? other.metadata.Keys.ToList() : null;
+			var thisKeys = this.metadata.Keys.ToList();
+			otherKeys.Sort();
+			thisKeys.Sort();
+			return other != null && other.URI == this.URI && other.ID == this.ID && other.title == this.title
+				&& other.authorId == this.authorId
+				&& other.pages != null && Enumerable.SequenceEqual(other.pages, this.pages)
+				&& other.published == this.published
+				&& other.cover != null && Enumerable.SequenceEqual(other.cover, this.cover)
+				&& otherChanges != null && Enumerable.SequenceEqual(otherChanges, thisChanges)
+				&& otherKeys != null && Enumerable.SequenceEqual(otherKeys, thisKeys)
+				&& otherKeys.All(it => other.metadata[it] == this.metadata[it])
+				&& other.genres != null && Enumerable.SequenceEqual(other.genres, this.genres);
+		}
 		public static Book FactoryPoco(int i)
 		{
 			var book = new Book
@@ -474,7 +515,7 @@ namespace JsonBenchmark.Models.Large
 		SciFi
 	}
 	[DataContract]
-	public class Page
+	public class Page : IEquatable<Page>
 	{
 		public Page()
 		{
@@ -492,17 +533,17 @@ namespace JsonBenchmark.Models.Large
 		public List<Note> notes { get; set; }
 		[DataMember]
 		public Guid identity { get; set; }
-		public override int GetHashCode() { return URI.GetHashCode(); }
-		public override bool Equals(object obj)
+		public override int GetHashCode() { return BookID ^ Index; }
+		public override bool Equals(object obj) { return Equals(obj as Page); }
+		public bool Equals(Page other)
 		{
-			var other = obj as Page;
 			return other != null && other.URI == this.URI && other.BookID == this.BookID && other.Index == this.Index
 				&& other.text == this.text
 				&& Enumerable.SequenceEqual(other.notes, this.notes);
 		}
 	}
 	[DataContract]
-	public struct Footnote : Note
+	public class Footnote : Note, IEquatable<Footnote>
 	{
 		[DataMember]
 		public string note { get; set; }
@@ -512,9 +553,16 @@ namespace JsonBenchmark.Models.Large
 		public DateTime createadAt { get; set; }
 		[DataMember]
 		public long index { get; set; }
+		public override int GetHashCode() { return note.GetHashCode(); }
+		public override bool Equals(object obj) { return Equals(obj as Footnote); }
+		public bool Equals(Footnote other)
+		{
+			return other != null && other.note == this.note && other.writtenBy == this.writtenBy
+				&& other.createadAt == this.createadAt && other.index == this.index;
+		}
 	}
 	[DataContract]
-	public struct Headnote : Note
+	public class Headnote : Note, IEquatable<Headnote>
 	{
 		[DataMember]
 		public string note { get; set; }
@@ -522,6 +570,13 @@ namespace JsonBenchmark.Models.Large
 		public string writtenBy { get; set; }
 		[DataMember]
 		public DateTime? modifiedAt { get; set; }
+		public override int GetHashCode() { return note.GetHashCode(); }
+		public override bool Equals(object obj) { return Equals(obj as Headnote); }
+		public bool Equals(Headnote other)
+		{
+			return other != null && other.note == this.note && other.writtenBy == this.writtenBy
+				&& other.modifiedAt == this.modifiedAt;
+		}
 	}
 	public interface Note
 	{
