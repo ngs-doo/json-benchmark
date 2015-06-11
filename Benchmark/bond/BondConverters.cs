@@ -2,7 +2,28 @@
 
 namespace SmallObjects.Bond
 {
-
+	partial class Message : IEquatable<Message>
+	{
+		public bool Equals(Message other)
+		{
+			return other != null && other.message == this.message && other.version == this.version;
+		}
+	}
+	partial class Complex : IEquatable<Complex>
+	{
+		public bool Equals(Complex other)
+		{
+			return other != null && other.x == this.x && other.y == this.y && other.z == this.z;
+		}
+	}
+	partial class Post : IEquatable<Post>
+	{
+		public bool Equals(Post other)
+		{
+			return other != null && other.URI == this.URI && other.ID == this.ID && other.created == this.created
+				&& other.title == this.title && other.active == this.active;
+		}
+	}
 	public static class BondTypeAliasConverter
 	{
 		public static decimal Convert(ArraySegment<byte> value, decimal unused)
