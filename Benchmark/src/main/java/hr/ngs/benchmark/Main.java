@@ -11,7 +11,8 @@ import java.util.*;
 public class Main {
 
 	static enum BenchTarget {
-		DslJavaFull, DslJavaMinimal, Jackson, JacksonAfterburner, Boon, Gson, Genson, Alibaba
+		DslJavaFull, DslJavaMinimal, Jackson, JacksonAfterburner,
+		Boon, Gson, Genson, Alibaba, Flexjson
 	}
 
 	enum BenchSize {
@@ -32,7 +33,7 @@ public class Main {
 	}
 
 	public static void main(String[] args) throws Exception {
-		//args = new String[]{"Jackson", "Large", "Check", "100"};
+		//args = new String[]{"Flexjson", "Small", "Check", "100"};
 		if (args.length != 4) {
 			System.out.printf(
 					"Expected usage: java -jar json-benchamrk.jar (%s) (%s) (%s) n",
@@ -83,6 +84,8 @@ public class Main {
 			serializer = SetupLibraries.setupAlibaba();
 		} else if (target == BenchTarget.Boon) {
 			serializer = SetupLibraries.setupBoon();
+		} else if (target == BenchTarget.Flexjson) {
+			serializer = SetupLibraries.setupFlexjson();
 		} else if (target == BenchTarget.Gson) {
 			serializer = SetupLibraries.setupGson();
 		} else if (target == BenchTarget.Genson) {
@@ -159,7 +162,7 @@ public class Main {
 		incorrect = 0;
 		for (int i = 0; i < repeat; i++) {
 			hr.ngs.benchmark.SmallObjects.Complex complex = new hr.ngs.benchmark.SmallObjects.Complex();
-			complex.setX(BigDecimal.valueOf(i / 1000f)).setY(-i / 1000f).setZ(i);
+			complex.setX(BigDecimal.valueOf(i / 1000d)).setY(-i / 1000f).setZ(i);
 			if (type == BenchType.None) continue;
 			result = serializer.serialize(complex);
 			size += result.length;
@@ -179,9 +182,10 @@ public class Main {
 		incorrect = 0;
 		for (int i = 0; i < repeat; i++) {
 			hr.ngs.benchmark.SmallObjects.Post post = new hr.ngs.benchmark.SmallObjects.Post();
+			post.setID(UUID.randomUUID());
 			post.setTitle("some title " + i);
 			post.setActive(i % 2 == 0);
-			post.setCreated(now.plusSeconds(i).toLocalDate());
+			post.setCreated(now.plusMinutes(i).toLocalDate());
 			if (type == BenchType.None) continue;
 			result = serializer.serialize(post);
 			size += result.length;
@@ -245,23 +249,24 @@ public class Main {
 		incorrect = 0;
 		for (int i = 0; i < repeat; i++) {
 			hr.ngs.benchmark.StandardObjects.Post post = new hr.ngs.benchmark.StandardObjects.Post();
+			post.setID(-i);
 			post.setApproved(i % 2 == 0 ? null : now.plusMillis(i));
 			post.setVotes(new hr.ngs.benchmark.StandardObjects.Vote(i / 2, i / 3));
 			post.setText("some text describing post " + i);
 			post.setTitle("post title " + i);
 			post.setState(states[i % 3]);
-			post.setCreated(today.plusDays(i));
 			String[] t = tags[i % 3];
 			for (int j = 0; j < t.length; j++) {
 				post.getTags().add(t[j]);
 			}
+			post.setCreated(today.plusDays(i));
 			for (int j = 0; j < i % 100; j++) {
 				hr.ngs.benchmark.StandardObjects.Comment comment = new hr.ngs.benchmark.StandardObjects.Comment();
+				comment.setCreated(today.plusDays(i + j));
 				comment.setMessage("comment number " + i + " for " + j);
 				comment.setVotes(new hr.ngs.benchmark.StandardObjects.Vote(j, j * 2));
 				comment.setApproved(j % 3 != 0 ? null : now.plusMillis(i));
 				comment.setUser("some random user " + i);
-				comment.setCreated(today.plusDays(i + j));
 				post.getComments().add(comment);
 			}
 			if (type == BenchType.None) continue;
@@ -294,13 +299,14 @@ public class Main {
 		long start = System.nanoTime();
 		for (int i = 0; i < repeat; i++) {
 			hr.ngs.benchmark.LargeObjects.Book book = new hr.ngs.benchmark.LargeObjects.Book();
+			book.setID(-i);
 			book.setAuthorId(i / 100);
 			book.setPublished(i % 3 == 0 ? null : now.plusMinutes(i).toLocalDate());
 			book.setTitle("book title " + i);
-			ArrayList<hr.ngs.benchmark.LargeObjects.Genre> genres = new ArrayList<hr.ngs.benchmark.LargeObjects.Genre>();
+			hr.ngs.benchmark.LargeObjects.Genre[] genres = new hr.ngs.benchmark.LargeObjects.Genre[i % 2];
 			for (int j = 0; j < i % 2; j++)
-				genres.add(genresEnum[(i + j) % 4]);
-			book.setGenres(genres.toArray(new hr.ngs.benchmark.LargeObjects.Genre[genres.size()]));
+				genres[j] = genresEnum[(i + j) % 4];
+			book.setGenres(genres);
 			for (int j = 0; j < i % 20; j++)
 				book.getChanges().add(now.plusMinutes(i).toLocalDate());
 			for (int j = 0; j < i % 50; j++)

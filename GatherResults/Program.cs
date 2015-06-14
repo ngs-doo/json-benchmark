@@ -52,38 +52,44 @@ namespace GatherResults
 			var javaVersion = process.StandardOutput.ReadToEnd();
 			Console.WriteLine(javaVersion);
 			int repeat = args.Length > 1 ? int.Parse(args[1]) : 2;
+			RunSinglePass("Warmup .NET", true, "RevenjJsonMinimal", "Small", null, 1);
+			RunSinglePass("Warmup JVM", false, "DslJavaMinimal", "Small", null, 1);
 			var small1 = RunSmall(repeat, 1);
 			var large1 = RunLarge(repeat, 1);
 			var small100k = RunSmall(repeat, 100000);
-			//var small1m = RunSmall(repeat, 1000000);
-			//var small10m = RunSmall(repeat, 10000000);
+			var small1m = RunSmall(repeat, 1000000);
+			var small10m = RunSmall(repeat, 10000000);
+			RunSinglePass("Warmup .NET", true, "RevenjJsonMinimal", "Standard", null, 1);
+			RunSinglePass("Warmup JVM", false, "DslJavaMinimal", "Standard", null, 1);
 			var std10k = RunStandard(repeat, 10000);
-			//var std100k = RunStandard(repeat, 100000);
-			//var std1m = RunStandard(repeat, 1000000);
+			var std100k = RunStandard(repeat, 100000);
+			var std1m = RunStandard(repeat, 1000000);
+			RunSinglePass("Warmup .NET", true, "RevenjJsonMinimal", "Large", null, 1);
+			RunSinglePass("Warmup JVM", false, "DslJavaMinimal", "Large", null, 1);
 			var large100 = RunLarge(repeat, 100);
-			//var large1k = RunLarge(repeat, 1000);
+			var large1k = RunLarge(repeat, 1000);
 			File.Copy("template.xlsx", "results.xlsx", true);
 			var vm = new ViewModel[]
 			{
 				ViewModel.Create("Startup times: SmallObject.Message",small1, t => t.Message),
-				new ViewModel("Startup times: LargeObjects.Book",large1),
+				new ViewModel("Startup times: LargeObjects.Book", large1),
 				ViewModel.Create("100.000 SmallObjects.Message", small100k, t => t.Message),
-				//ViewModel.Create("1.000.000 SmallObjects.Message", small1m, t => t.Message),
-				//ViewModel.Create("10.000.000 SmallObjects.Message", small10m, t => t.Message),
+				ViewModel.Create("1.000.000 SmallObjects.Message", small1m, t => t.Message),
+				ViewModel.Create("10.000.000 SmallObjects.Message", small10m, t => t.Message),
 				ViewModel.Create("100.000 SmallObjects.Complex", small100k, t => t.Complex),
-				//ViewModel.Create("1.000.000 SmallObjects.Complex", small1m, t => t.Complex),
-				//ViewModel.Create("10.000.000 SmallObjects.Complex", small10m, t => t.Complex),
+				ViewModel.Create("1.000.000 SmallObjects.Complex", small1m, t => t.Complex),
+				ViewModel.Create("10.000.000 SmallObjects.Complex", small10m, t => t.Complex),
 				ViewModel.Create("100.000 SmallObjects.Post", small100k, t => t.Post),
-				//ViewModel.Create("1.000.000 SmallObjects.Post", small1m, t => t.Post),
-				//ViewModel.Create("10.000.000 SmallObjects.Post", small10m, t => t.Post),
+				ViewModel.Create("1.000.000 SmallObjects.Post", small1m, t => t.Post),
+				ViewModel.Create("10.000.000 SmallObjects.Post", small10m, t => t.Post),
 				ViewModel.Create("10.000 StandardObjects.DeletePost", std10k, t => t.DeletePost),
-				//ViewModel.Create("100.000 StandardObjects.DeletePost", std100k, t => t.DeletePost),
-				//ViewModel.Create("1.000.000 StandardObjects.DeletePost", std1m, t => t.DeletePost),
+				ViewModel.Create("100.000 StandardObjects.DeletePost", std100k, t => t.DeletePost),
+				ViewModel.Create("1.000.000 StandardObjects.DeletePost", std1m, t => t.DeletePost),
 				ViewModel.Create("10.000 StandardObjects.Post", std10k, t => t.Post),
-				//ViewModel.Create("100.000 StandardObjects.Post", std100k, t => t.Post),
-				//ViewModel.Create("1.000.000 StandardObjects.Post", std1m, t => t.Post),
+				ViewModel.Create("100.000 StandardObjects.Post", std100k, t => t.Post),
+				ViewModel.Create("1.000.000 StandardObjects.Post", std1m, t => t.Post),
 				new ViewModel("100 LargeObjects.Book", large100),
-				//new ViewModel("1.000 LargeObjects.Book", large1k),
+				new ViewModel("1.000 LargeObjects.Book", large1k),
 			};
 			var json = JsonConvert.SerializeObject(vm);
 			File.WriteAllText("results.json", json);
@@ -187,17 +193,14 @@ namespace GatherResults
 
 		static AggregatePass GetherDuration(string type, bool? both, int count)
 		{
-			RunSinglePass("Warmup .NET", true, "RevenjJsonMinimal", type, null, 1);
 			var NJ = RunSinglePass("NewtonsoftJson", true, "NewtonsoftJson", type, both, count);
 			var REV = RunSinglePass("Revenj", true, "RevenjJsonMinimal", type, both, count);
 			var SS = RunSinglePass("Service Stack", true, "ServiceStack", type, both, count);
 			var JIL = RunSinglePass("Jil", true, "Jil", type, both, count);
 			var NN = RunSinglePass("NetJSON", true, "NetJSON", type, both, count);
-			RunSinglePass("Warmup JVM", false, "DslJavaMinimal", type, null, 1); //warmup
 			var JJ = RunSinglePass("Jackson", false, "JacksonAfterburner", type, both, count);
 			var JD = RunSinglePass("DSL Platform Java", false, "DslJavaMinimal", type, both, count);
-			var JB = RunSinglePass("Boon", false, "Boon", type, both, count);
-			var JA = RunSinglePass("Alibaba", false, "Alibaba", type, both, count);
+			var JS = RunSinglePass("Genson", false, "Genson", type, both, count);
 			var JG = RunSinglePass("Gson", false, "Gson", type, both, count);
 			return new AggregatePass
 			{
@@ -208,8 +211,7 @@ namespace GatherResults
 				NetJSON = NN,
 				Jackson = JJ,
 				DslJava = JD,
-				Boon = JB,
-				Alibaba = JA,
+				Genson = JS,
 				Gson = JG,
 			};
 		}
@@ -228,11 +230,11 @@ namespace GatherResults
 			};
 			var result = new List<Stats>();
 			var process = Process.Start(info);
-			process.WaitForExit();
-			if (process.ExitCode != 0)
+			process.WaitForExit(5000 + count * 500);
+			if (!process.HasExited || process.ExitCode != 0)
 			{
 				Console.WriteLine();
-				var error = process.StandardError.ReadToEnd();
+				var error = process.HasExited ? process.StandardError.ReadToEnd() : "Timeout";
 				process.Close();
 				Console.WriteLine(error);
 				result.Add(new Stats { Duration = -1, Size = -1 });
@@ -272,12 +274,11 @@ namespace GatherResults
 		public List<Stats> Newtonsoft;
 		public List<Stats> Revenj;
 		public List<Stats> Jil;
-		public List<Stats> ServiceStack;
 		public List<Stats> NetJSON;
+		public List<Stats> ServiceStack;
 		public List<Stats> Jackson;
 		public List<Stats> DslJava;
-		public List<Stats> Boon;
-		public List<Stats> Alibaba;
+		public List<Stats> Genson;
 		public List<Stats> Gson;
 
 		public Result Extract(int index)
@@ -291,8 +292,7 @@ namespace GatherResults
 				NetJSON = NetJSON[index],
 				Jackson = Jackson[index],
 				DslJava = DslJava[index],
-				Boon = Boon[index],
-				Alibaba = Alibaba[index],
+				Genson = Genson[index],
 				Gson = Gson[index],
 			};
 		}
@@ -307,8 +307,7 @@ namespace GatherResults
 		public Stats NetJSON;
 		public Stats Jackson;
 		public Stats DslJava;
-		public Stats Boon;
-		public Stats Alibaba;
+		public Stats Genson;
 		public Stats Gson;
 	}
 
@@ -322,21 +321,23 @@ namespace GatherResults
 	class ViewModel
 	{
 		public string description;
+		public List<Result> instance;
 		public List<Result> serialization;
 		public List<Result> both;
 		public ViewModel() { }
 		public ViewModel(string description, Run<List<Result>> run)
-			: this(description, run.Serialization, run.Both) { }
-		private ViewModel(string description, List<Result> serialization, List<Result> both)
+			: this(description, run.Instance, run.Serialization, run.Both) { }
+		private ViewModel(string description, List<Result> instance, List<Result> serialization, List<Result> both)
 		{
 			this.description = description;
+			this.instance = instance;
 			this.serialization = serialization;
 			this.both = both;
 		}
 
 		public static ViewModel Create<T>(string description, Run<T> run, Func<T, List<Result>> extract)
 		{
-			return new ViewModel(description, extract(run.Serialization), extract(run.Both));
+			return new ViewModel(description, extract(run.Instance), extract(run.Serialization), extract(run.Both));
 		}
 	}
 }

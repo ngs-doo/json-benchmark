@@ -20,11 +20,18 @@ import com.google.gson.JsonSerializer;
 import com.owlike.genson.Genson;
 import com.owlike.genson.GensonBuilder;
 import com.owlike.genson.ext.jodatime.JodaTimeBundle;
+import flexjson.JSONDeserializer;
+import flexjson.JSONSerializer;
 import org.boon.json.JsonFactory;
+import org.boon.json.JsonSerializerFactory;
+import org.boon.json.serializers.CustomObjectSerializer;
+import org.boon.json.serializers.JsonSerializerInternal;
+import org.boon.primitive.CharBuf;
 import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.io.StringWriter;
 import java.lang.reflect.Type;
 import java.nio.charset.CharsetDecoder;
@@ -122,12 +129,41 @@ public class SetupLibraries {
 		};
 	}
 
+	static class BoonLocalDateSerializer implements CustomObjectSerializer {
+		@Override
+		public Class type() {
+			return LocalDate.class;
+		}
+		@Override
+		public void serializeObject(JsonSerializerInternal jsonSerializerInternal, Object o, CharBuf charBuf) {
+			charBuf.write(o.toString());
+		}
+	}
+	static class BoonDateTimeSerializer implements CustomObjectSerializer {
+		@Override
+		public Class type() {
+			return DateTime.class;
+		}
+		@Override
+		public void serializeObject(JsonSerializerInternal jsonSerializerInternal, Object o, CharBuf charBuf) {
+			charBuf.write(o.toString());
+		}
+	}
+
+	//only custom writer, no custom parser!?
 	static Serializer setupBoon() throws IOException {
+		final org.boon.json.JsonSerializer serializer = new JsonSerializerFactory()
+				.addTypeSerializer(LocalDate.class, new BoonLocalDateSerializer())
+				.addTypeSerializer(DateTime.class, new BoonDateTimeSerializer())
+				.create();
 		final org.boon.json.ObjectMapper mapper =  JsonFactory.create();
 		return new Serializer() {
 			@Override
 			public Bytes serialize(JsonObject arg) throws IOException {
-				byte[] result = mapper.writeValueAsBytes(arg);
+				CharBuf cb = serializer.serialize(arg);
+				cb.flush();
+				String json = cb.toStringAndRecycle();
+				byte[] result = json.getBytes("UTF-8");
 				return new Bytes(result, result.length);
 			}
 
@@ -193,6 +229,7 @@ public class SetupLibraries {
 		};
 	}
 
+	//TODO no custom handlers!?
 	static Serializer setupAlibaba() throws IOException {
 		return new Serializer() {
 			@Override
@@ -226,6 +263,25 @@ public class SetupLibraries {
 				} else {
 					return genson.deserialize(Arrays.copyOf(input.content, input.length), manifest);
 				}
+			}
+		};
+	}
+
+	static Serializer setupFlexjson() throws IOException {
+		final JSONSerializer serializer = new JSONSerializer();
+
+		return new Serializer() {
+			@Override
+			public Bytes serialize(JsonObject arg) throws IOException {
+				byte[] result = serializer.serialize(arg).getBytes("UTF-8");
+				return new Bytes(result, result.length);
+			}
+
+			@Override
+			public <T> T deserialize(Class<T> manifest, Bytes input) throws IOException {
+				String json = new String(input.content, 0, input.length, "UTF-8");
+				JSONDeserializer<T> deserializer = new JSONDeserializer<T>();
+				return deserializer.deserialize(json, manifest);
 			}
 		};
 	}
