@@ -101,7 +101,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="bond\BondConverters.cs" />
-    <Compile Include="models\Models.cs" />
+    <Compile Include="bond\StandardObjects_types.cs" />
+    <Compile Include="LibrarySetup.cs" />
+    <Compile Include="Models.Large.cs" />
+    <Compile Include="Models.Standard.cs" />
+    <Compile Include="Models.Small.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="bond\SmallObjects_types.cs" />
@@ -110,12 +114,13 @@
     <None Include="App.config">
       <SubType>Designer</SubType>
     </None>
-    <None Include="models\LargeObjects.dsl" />
+    <None Include="bond\StandardObjects.bond" />
+    <None Include="LargeObjects.dsl" />
     <None Include="bond\SmallObjects.bond" />
-    <None Include="models\StandardObjects.dsl" />
+    <None Include="StandardObjects.dsl" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="models\SmallObjects.dsl" />
+    <None Include="SmallObjects.dsl" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

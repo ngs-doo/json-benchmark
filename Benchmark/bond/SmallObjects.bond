@@ -2,22 +2,14 @@
 
 using DECIMAL = blob;
 using DATETIME = int64;
+using GUID = blob;
 
 struct Message {
 	1: string message;
 	2: int32 version;
 }
 
-struct GUID
-{
-	0: uint32 Data1;
-	1: uint16 Data2;
-	2: uint16 Data3;
-	3: uint64 Data4;
-}
-
 struct Post {
-	0: string URI;
 	1: GUID ID;
 	2: string title;
 	3: bool active;

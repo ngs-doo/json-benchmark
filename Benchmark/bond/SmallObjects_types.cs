@@ -46,39 +46,10 @@ namespace SmallObjects.Bond
 
     [global::Bond.Schema]
     [System.CodeDom.Compiler.GeneratedCode("gbc", "3.05")]
-    public partial class GUID
-    {
-        [global::Bond.Id(0)]
-        public uint Data1 { get; set; }
-
-        [global::Bond.Id(1)]
-        public ushort Data2 { get; set; }
-
-        [global::Bond.Id(2)]
-        public ushort Data3 { get; set; }
-
-        [global::Bond.Id(3)]
-        public ulong Data4 { get; set; }
-        
-        public GUID()
-            : this("SmallObjects.Bond.GUID", "GUID")
-        {}
-
-        protected GUID(string fullName, string name)
-        {
-            
-        }
-    }
-
-    [global::Bond.Schema]
-    [System.CodeDom.Compiler.GeneratedCode("gbc", "3.05")]
     public partial class Post
     {
-        [global::Bond.Id(0)]
-        public string URI { get; set; }
-
-        [global::Bond.Id(1)]
-        public GUID ID { get; set; }
+        [global::Bond.Id(1), global::Bond.Type(typeof(global::Bond.Tag.blob))]
+        public System.Guid ID { get; set; }
 
         [global::Bond.Id(2)]
         public string title { get; set; }
@@ -95,8 +66,7 @@ namespace SmallObjects.Bond
 
         protected Post(string fullName, string name)
         {
-            URI = string.Empty;
-            ID = new GUID();
+            ID = new System.Guid();
             title = string.Empty;
             created = new System.DateTime();
         }

@@ -55,35 +55,35 @@ namespace GatherResults
 			var small1 = RunSmall(repeat, 1);
 			var large1 = RunLarge(repeat, 1);
 			var small100k = RunSmall(repeat, 100000);
-			var small1m = RunSmall(repeat, 1000000);
-			var small10m = RunSmall(repeat, 10000000);
+			//var small1m = RunSmall(repeat, 1000000);
+			//var small10m = RunSmall(repeat, 10000000);
 			var std10k = RunStandard(repeat, 10000);
-			var std100k = RunStandard(repeat, 100000);
-			var std1m = RunStandard(repeat, 1000000);
+			//var std100k = RunStandard(repeat, 100000);
+			//var std1m = RunStandard(repeat, 1000000);
 			var large100 = RunLarge(repeat, 100);
-			var large1k = RunLarge(repeat, 1000);
+			//var large1k = RunLarge(repeat, 1000);
 			File.Copy("template.xlsx", "results.xlsx", true);
 			var vm = new ViewModel[]
 			{
 				ViewModel.Create("Startup times: SmallObject.Message",small1, t => t.Message),
 				new ViewModel("Startup times: LargeObjects.Book",large1),
 				ViewModel.Create("100.000 SmallObjects.Message", small100k, t => t.Message),
-				ViewModel.Create("1.000.000 SmallObjects.Message", small1m, t => t.Message),
-				ViewModel.Create("10.000.000 SmallObjects.Message", small10m, t => t.Message),
+				//ViewModel.Create("1.000.000 SmallObjects.Message", small1m, t => t.Message),
+				//ViewModel.Create("10.000.000 SmallObjects.Message", small10m, t => t.Message),
 				ViewModel.Create("100.000 SmallObjects.Complex", small100k, t => t.Complex),
-				ViewModel.Create("1.000.000 SmallObjects.Complex", small1m, t => t.Complex),
-				ViewModel.Create("10.000.000 SmallObjects.Complex", small10m, t => t.Complex),
+				//ViewModel.Create("1.000.000 SmallObjects.Complex", small1m, t => t.Complex),
+				//ViewModel.Create("10.000.000 SmallObjects.Complex", small10m, t => t.Complex),
 				ViewModel.Create("100.000 SmallObjects.Post", small100k, t => t.Post),
-				ViewModel.Create("1.000.000 SmallObjects.Post", small1m, t => t.Post),
-				ViewModel.Create("10.000.000 SmallObjects.Post", small10m, t => t.Post),
+				//ViewModel.Create("1.000.000 SmallObjects.Post", small1m, t => t.Post),
+				//ViewModel.Create("10.000.000 SmallObjects.Post", small10m, t => t.Post),
 				ViewModel.Create("10.000 StandardObjects.DeletePost", std10k, t => t.DeletePost),
-				ViewModel.Create("100.000 StandardObjects.DeletePost", std100k, t => t.DeletePost),
-				ViewModel.Create("1.000.000 StandardObjects.DeletePost", std1m, t => t.DeletePost),
+				//ViewModel.Create("100.000 StandardObjects.DeletePost", std100k, t => t.DeletePost),
+				//ViewModel.Create("1.000.000 StandardObjects.DeletePost", std1m, t => t.DeletePost),
 				ViewModel.Create("10.000 StandardObjects.Post", std10k, t => t.Post),
-				ViewModel.Create("100.000 StandardObjects.Post", std100k, t => t.Post),
-				ViewModel.Create("1.000.000 StandardObjects.Post", std1m, t => t.Post),
+				//ViewModel.Create("100.000 StandardObjects.Post", std100k, t => t.Post),
+				//ViewModel.Create("1.000.000 StandardObjects.Post", std1m, t => t.Post),
 				new ViewModel("100 LargeObjects.Book", large100),
-				new ViewModel("1.000 LargeObjects.Book", large1k),
+				//new ViewModel("1.000 LargeObjects.Book", large1k),
 			};
 			var json = JsonConvert.SerializeObject(vm);
 			File.WriteAllText("results.json", json);
@@ -103,14 +103,16 @@ namespace GatherResults
 		{
 			return new Run<SmallTest>
 			{
+				Instance = RunSmall(null, times, loops),
 				Serialization = RunSmall(false, times, loops),
 				Both = RunSmall(true, times, loops)
 			};
 		}
 
-		static SmallTest RunSmall(bool both, int times, int loops)
+		static SmallTest RunSmall(bool? both, int times, int loops)
 		{
-			Console.Write("Gathering small (" + loops + ") " + (both ? "serialization and deserialization" : "serialization only"));
+			Console.Write("Gathering small (" + loops + ") ");
+			Console.Write(both == null ? "instance only" : both == true ? "serialization and deserialization" : "serialization only");
 			var result = new SmallTest();
 			for (int i = 0; i < times; i++)
 			{
@@ -135,14 +137,16 @@ namespace GatherResults
 		{
 			return new Run<StandardTest>
 			{
+				Instance = RunStandard(null, times, loops),
 				Serialization = RunStandard(false, times, loops),
 				Both = RunStandard(true, times, loops)
 			};
 		}
 
-		static StandardTest RunStandard(bool both, int times, int loops)
+		static StandardTest RunStandard(bool? both, int times, int loops)
 		{
-			Console.Write("Gathering standard (" + loops + ") " + (both ? "serialization and deserialization" : "serialization only"));
+			Console.Write("Gathering standard (" + loops + ")");
+			Console.Write(both == null ? "instance only" : both == true ? "serialization and deserialization" : "serialization only");
 			var result = new StandardTest();
 			for (int i = 0; i < times; i++)
 			{
@@ -160,14 +164,16 @@ namespace GatherResults
 		{
 			return new Run<List<Result>>
 			{
+				Instance = RunLarge(null, times, loops),
 				Serialization = RunLarge(false, times, loops),
 				Both = RunLarge(true, times, loops)
 			};
 		}
 
-		static List<Result> RunLarge(bool both, int times, int loops)
+		static List<Result> RunLarge(bool? both, int times, int loops)
 		{
-			Console.Write("Gathering large (" + loops + ") " + (both ? "serialization and deserialization" : "serialization only"));
+			Console.Write("Gathering large (" + loops + ")");
+			Console.Write(both == null ? "instance only" : both == true ? "serialization and deserialization" : "serialization only");
 			var result = new List<Result>();
 			for (int i = 0; i < times; i++)
 			{
@@ -179,30 +185,32 @@ namespace GatherResults
 			return result;
 		}
 
-		static AggregatePass GetherDuration(string type, bool both, int count)
+		static AggregatePass GetherDuration(string type, bool? both, int count)
 		{
-			RunSinglePass("Warmup .NET", true, "BakedInMinimal", type, null, 1);
-			var Net = RunSinglePass("Instance .NET", true, "BakedInMinimal", type, null, count);
+			RunSinglePass("Warmup .NET", true, "RevenjJsonMinimal", type, null, 1);
 			var NJ = RunSinglePass("NewtonsoftJson", true, "NewtonsoftJson", type, both, count);
-			var NBF = RunSinglePass("Revenj full", true, "BakedInFull", type, both, count);
-			var NBM = RunSinglePass("Revenj minimal", true, "BakedInMinimal", type, both, count);
-			var NP = RunSinglePass("Protobuf.NET", true, "ProtoBuf", type, both, count);
-			RunSinglePass("Warmup JVM", false, "BakedInMinimal", type, null, 1); //warmup
-			var Jvm = RunSinglePass("Instance JVM", false, "BakedInMinimal", type, null, count);
-			var JJ = RunSinglePass("Jackson", false, "Jackson", type, both, count);
-			var JBF = RunSinglePass("DSL client Java full", false, "BakedInFull", type, both, count);
-			var JBM = RunSinglePass("DSL client Java minimal", false, "BakedInMinimal", type, both, count);
+			var REV = RunSinglePass("Revenj", true, "RevenjJsonMinimal", type, both, count);
+			var SS = RunSinglePass("Service Stack", true, "ServiceStack", type, both, count);
+			var JIL = RunSinglePass("Jil", true, "Jil", type, both, count);
+			var NN = RunSinglePass("NetJSON", true, "NetJSON", type, both, count);
+			RunSinglePass("Warmup JVM", false, "DslJavaMinimal", type, null, 1); //warmup
+			var JJ = RunSinglePass("Jackson", false, "JacksonAfterburner", type, both, count);
+			var JD = RunSinglePass("DSL Platform Java", false, "DslJavaMinimal", type, both, count);
+			var JB = RunSinglePass("Boon", false, "Boon", type, both, count);
+			var JA = RunSinglePass("Alibaba", false, "Alibaba", type, both, count);
+			var JG = RunSinglePass("Gson", false, "Gson", type, both, count);
 			return new AggregatePass
 			{
-				Net = Net,
-				Jvm = Jvm,
-				NewtonsoftJson = NJ,
-				NetBakedInFull = NBF,
-				NetBakedInMinimal = NBM,
-				Protobuf = NP,
+				Newtonsoft = NJ,
+				Revenj = REV,
+				ServiceStack = SS,
+				Jil = JIL,
+				NetJSON = NN,
 				Jackson = JJ,
-				JvmBakedInFull = JBF,
-				JvmBakedInMinimal = JBM
+				DslJava = JD,
+				Boon = JB,
+				Alibaba = JA,
+				Gson = JG,
 			};
 		}
 
@@ -239,8 +247,15 @@ namespace GatherResults
 				var duration = lines[i * 3].Split('=');
 				var size = lines[i * 3 + 1].Split('=');
 				var errors = lines[i * 3 + 2].Split('=');
-				Console.WriteLine(description + ": duration = " + duration[1].Trim() + ", size = " + size[1].Trim() + ", errors = " + errors[1].Trim());
-				result.Add(new Stats { Duration = int.Parse(duration[1]), Size = long.Parse(size[1]) });
+				try
+				{
+					Console.WriteLine(description + ": duration = " + duration[1].Trim() + ", size = " + size[1].Trim() + ", errors = " + errors[1].Trim());
+					result.Add(new Stats { Duration = int.Parse(duration[1]), Size = long.Parse(size[1]) });
+				}
+				catch
+				{
+					result.Add(new Stats { Duration = -1, Size = -1 });
+				}
 			}
 			return result;
 		}
@@ -254,48 +269,52 @@ namespace GatherResults
 
 	class AggregatePass
 	{
-		public List<Stats> Net;
-		public List<Stats> NewtonsoftJson;
-		public List<Stats> NetBakedInFull;
-		public List<Stats> NetBakedInMinimal;
-		public List<Stats> Jvm;
+		public List<Stats> Newtonsoft;
+		public List<Stats> Revenj;
+		public List<Stats> Jil;
+		public List<Stats> ServiceStack;
+		public List<Stats> NetJSON;
 		public List<Stats> Jackson;
-		public List<Stats> JvmBakedInFull;
-		public List<Stats> JvmBakedInMinimal;
-		public List<Stats> Protobuf;
+		public List<Stats> DslJava;
+		public List<Stats> Boon;
+		public List<Stats> Alibaba;
+		public List<Stats> Gson;
 
 		public Result Extract(int index)
 		{
 			return new Result
 			{
-				Net = Net[index].Duration,
-				Jvm = Jvm[index].Duration,
-				NewtonsoftJson = NewtonsoftJson[index],
-				NetBakedInFull = NetBakedInFull[index],
-				NetBakedInMinimal = NetBakedInMinimal[index],
+				Newtonsoft = Newtonsoft[index],
+				Revenj = Revenj[index],
+				ServiceStack = ServiceStack[index],
+				Jil = Jil[index],
+				NetJSON = NetJSON[index],
 				Jackson = Jackson[index],
-				JvmBakedInFull = JvmBakedInFull[index],
-				JvmBakedInMinimal = JvmBakedInMinimal[index],
-				Protobuf = Protobuf[index],
+				DslJava = DslJava[index],
+				Boon = Boon[index],
+				Alibaba = Alibaba[index],
+				Gson = Gson[index],
 			};
 		}
 	}
 
 	class Result
 	{
-		public int Net;
-		public int Jvm;
-		public Stats NewtonsoftJson;
-		public Stats NetBakedInFull;
-		public Stats NetBakedInMinimal;
+		public Stats Newtonsoft;
+		public Stats Revenj;
+		public Stats Jil;
+		public Stats ServiceStack;
+		public Stats NetJSON;
 		public Stats Jackson;
-		public Stats JvmBakedInFull;
-		public Stats JvmBakedInMinimal;
-		public Stats Protobuf;
+		public Stats DslJava;
+		public Stats Boon;
+		public Stats Alibaba;
+		public Stats Gson;
 	}
 
 	class Run<T>
 	{
+		public T Instance;
 		public T Serialization;
 		public T Both;
 	}

@@ -1,14 +1,6 @@
-﻿using Bond.IO.Unsafe;
-using Bond.Protocols;
-using Revenj.Extensibility;
-using Revenj.Serialization;
-using Revenj.Utility;
+﻿using Revenj.Utility;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Runtime.Serialization;
-using System.Runtime.Serialization.Formatters;
 
 namespace JsonBenchmark
 {
@@ -30,17 +22,13 @@ namespace JsonBenchmark
 			Serialization, Both, None, Check
 		}
 
-		static void Main(string[] args)
+		static int Main(string[] args)
 		{
-			//args = new[] { "ProtoBuf", "Small", "Serialization", "1000000" };
-			//args = new[] { "BakedInMinimal", "Small", "Check", "1000" };
-			//args = new[] { "BondJson", "Small", "Both", "100" };
-			//args = new[] { "BakedInMinimal", "Small", "Both", "10000000" };
-			//args = new[] { "RevenjJsonMinimal", "Large", "Check", "100" };
-			//args = new[] { "ServiceStack", "Large", "Check", "100" };
-			//args = new[] { "fastJSON", "Small", "Serialization", "1000000" };
-			//args = new[] { "NewtonsoftJson", "Small", "Serialization", "10000000" };
-			//args = new[] { "NetJSON", "Small", "Serialization", "1000000" };
+			//args = new[] { "BondBinary", "Standard", "Check", "100" };
+			//args = new[] { "NewtonsoftJson", "Large", "Check", "100" };
+			var gc0 = GC.CollectionCount(0);
+			var gc1 = GC.CollectionCount(1);
+			var gc2 = GC.CollectionCount(2);
 			if (args.Length != 4)
 			{
 				Console.WriteLine(
@@ -48,62 +36,62 @@ namespace JsonBenchmark
 					string.Join(" | ", Enum.GetNames(typeof(BenchTarget))),
 					string.Join(" | ", Enum.GetNames(typeof(BenchSize))),
 					string.Join(" | ", Enum.GetNames(typeof(BenchType))));
-				return;
+				return -1;
 			}
 			BenchTarget target;
 			if (!Enum.TryParse<BenchTarget>(args[0], out target))
 			{
 				Console.WriteLine("Unknown target found: " + args[0] + ". Supported targets: " + string.Join(" | ", Enum.GetNames(typeof(BenchTarget))));
-				return;
+				return -2;
 			}
 			BenchSize size;
 			if (!Enum.TryParse<BenchSize>(args[1], out size))
 			{
 				Console.WriteLine("Unknown size found: " + args[1] + ". Supported size: " + string.Join(" | ", Enum.GetNames(typeof(BenchSize))));
-				return;
+				return -3;
 			}
 			BenchType type;
 			if (!Enum.TryParse<BenchType>(args[2], out type))
 			{
 				Console.WriteLine("Unknown type found: " + args[2] + ". Supported types: " + string.Join(" | ", Enum.GetNames(typeof(BenchType))));
-				return;
+				return -4;
 			}
 			int repeat;
 			if (!int.TryParse(args[3], out repeat))
 			{
 				Console.WriteLine("Invalid repeat parameter: " + args[3]);
-				return;
+				return -5;
 			}
 			Action<object, ChunkedMemoryStream> serialize;
 			Func<ChunkedMemoryStream, Type, object> deserialize;
 			switch (target)
 			{
 				case BenchTarget.NewtonsoftJson:
-					SetupNewtonsoftJson(out serialize, out deserialize);
+					LibrarySetup.SetupNewtonsoftJson(out serialize, out deserialize);
 					break;
 				case BenchTarget.BondJson:
-					SetupBondJson(out serialize, out deserialize);
+					LibrarySetup.SetupBondJson(out serialize, out deserialize);
 					break;
 				case BenchTarget.BondBinary:
-					SetupBondBinary(out serialize, out deserialize);
+					LibrarySetup.SetupBondBinary(out serialize, out deserialize);
 					break;
 				case BenchTarget.Jil:
-					SetupJil(out serialize, out deserialize);
+					LibrarySetup.SetupJil(out serialize, out deserialize);
 					break;
 				case BenchTarget.fastJSON:
-					SetupFastJson(out serialize, out deserialize);
+					LibrarySetup.SetupFastJson(out serialize, out deserialize);
 					break;
 				case BenchTarget.ServiceStack:
-					SetupServiceStack(out serialize, out deserialize);
+					LibrarySetup.SetupServiceStack(out serialize, out deserialize);
 					break;
 				case BenchTarget.ProtoBuf:
-					SetupRevenj(out serialize, out deserialize, "application/x-protobuf");
+					LibrarySetup.SetupRevenj(out serialize, out deserialize, "application/x-protobuf");
 					break;
 				case BenchTarget.RevenjJsonFull:
-					SetupRevenj(out serialize, out deserialize, "application/json");
+					LibrarySetup.SetupRevenj(out serialize, out deserialize, "application/json");
 					break;
 				default:
-					SetupRevenj(out serialize, out deserialize, "application/json;minimal");
+					LibrarySetup.SetupRevenj(out serialize, out deserialize, "application/json;minimal");
 					break;
 			}
 			var ms = new ChunkedMemoryStream();
@@ -114,21 +102,33 @@ namespace JsonBenchmark
 					{
 						if (target == BenchTarget.BondBinary || target == BenchTarget.BondJson)
 						{
-							RunLoop(repeat, serialize, deserialize, type, ms, Models.Small.Message.FactoryBond);
-							RunLoop(repeat, serialize, deserialize, type, ms, Models.Small.Complex.FactoryBond);
-							RunLoop(repeat, serialize, deserialize, type, ms, Models.Small.Post.FactoryBond);
+							Func<int, SmallObjects.Bond.Message> factory1 =
+								i => Models.Small.Message.Factory<SmallObjects.Bond.Message>(i);
+							Func<int, SmallObjects.Bond.Complex> factory2 =
+								i => Models.Small.Complex.Factory<SmallObjects.Bond.Complex>(i);
+							Func<int, SmallObjects.Bond.Post> factory3 =
+								i => Models.Small.Post.Factory<SmallObjects.Bond.Post>(i);
+							RunLoop(repeat, serialize, deserialize, type, ms, factory1);
+							RunLoop(repeat, serialize, deserialize, type, ms, factory2);
+							RunLoop(repeat, serialize, deserialize, type, ms, factory3);
 						}
 						else if (target == BenchTarget.RevenjJsonFull || target == BenchTarget.RevenjJsonMinimal)
 						{
-							RunLoop(repeat, serialize, deserialize, type, ms, Models.Small.Message.FactoryDsl);
-							RunLoop(repeat, serialize, deserialize, type, ms, Models.Small.Complex.FactoryDsl);
-							RunLoop(repeat, serialize, deserialize, type, ms, Models.Small.Post.FactoryDsl);
+							Func<int, SmallObjects.Message> factory1 = i => Models.Small.Message.Factory<SmallObjects.Message>(i);
+							Func<int, SmallObjects.Complex> factory2 = i => Models.Small.Complex.Factory<SmallObjects.Complex>(i);
+							Func<int, SmallObjects.Post> factory3 = i => Models.Small.Post.Factory<SmallObjects.Post>(i);
+							RunLoop(repeat, serialize, deserialize, type, ms, factory1);
+							RunLoop(repeat, serialize, deserialize, type, ms, factory2);
+							RunLoop(repeat, serialize, deserialize, type, ms, factory3);
 						}
 						else
 						{
-							RunLoop(repeat, serialize, deserialize, type, ms, Models.Small.Message.FactoryPoco);
-							RunLoop(repeat, serialize, deserialize, type, ms, Models.Small.Complex.FactoryPoco);
-							RunLoop(repeat, serialize, deserialize, type, ms, Models.Small.Post.FactoryPoco);
+							Func<int, Models.Small.Message> factory1 = i => Models.Small.Message.Factory<Models.Small.Message>(i);
+							Func<int, Models.Small.Complex> factory2 = i => Models.Small.Complex.Factory<Models.Small.Complex>(i);
+							Func<int, Models.Small.Post> factory3 = i => Models.Small.Post.Factory<Models.Small.Post>(i);
+							RunLoop(repeat, serialize, deserialize, type, ms, factory1);
+							RunLoop(repeat, serialize, deserialize, type, ms, factory2);
+							RunLoop(repeat, serialize, deserialize, type, ms, factory3);
 						}
 					}
 					catch (Exception ex)
@@ -138,20 +138,40 @@ namespace JsonBenchmark
 						ReportStatsAndRestart(null, -1, repeat);
 						Console.WriteLine("error");
 						Console.WriteLine(ex.ToString());
+						return -41;
 					}
 					break;
 				case BenchSize.Standard:
 					try
 					{
-						if (target == BenchTarget.RevenjJsonFull || target == BenchTarget.RevenjJsonMinimal)
+						if (target == BenchTarget.BondBinary || target == BenchTarget.BondJson)
 						{
-							RunLoop(repeat, serialize, deserialize, type, ms, Models.Standard.DeletePost.FactoryDsl);
-							RunLoop(repeat, serialize, deserialize, type, ms, Models.Standard.Post.FactoryDsl);
+							Func<int, StandardObjects.Bond.PostState> cast = i => (StandardObjects.Bond.PostState)i;
+							Func<int, StandardObjects.Bond.DeletePost> factory1 =
+								i => Models.Standard.DeletePost.Factory<StandardObjects.Bond.DeletePost, StandardObjects.Bond.PostState>(i, cast);
+							Func<int, StandardObjects.Bond.Post> factory2 =
+								i => Models.Standard.Post.Factory<StandardObjects.Bond.Post, StandardObjects.Bond.Vote, StandardObjects.Bond.PostState, StandardObjects.Bond.Comment>(i, cast);
+							RunLoop(repeat, serialize, deserialize, type, ms, factory1);
+							RunLoop(repeat, serialize, deserialize, type, ms, factory2);
+						}
+						else if (target == BenchTarget.RevenjJsonFull || target == BenchTarget.RevenjJsonMinimal)
+						{
+							Func<int, StandardObjects.PostState> cast = i => (StandardObjects.PostState)i;
+							Func<int, StandardObjects.DeletePost> factory1 =
+								i => Models.Standard.DeletePost.Factory<StandardObjects.DeletePost, StandardObjects.PostState>(i, cast);
+							Func<int, StandardObjects.Post> factory2 =
+								i => Models.Standard.Post.Factory<StandardObjects.Post, StandardObjects.Vote, StandardObjects.PostState, StandardObjects.Comment>(i, cast);
+							RunLoop(repeat, serialize, deserialize, type, ms, factory1);
+							RunLoop(repeat, serialize, deserialize, type, ms, factory2);
 						}
 						else
 						{
-							RunLoop(repeat, serialize, deserialize, type, ms, Models.Standard.DeletePost.FactoryPoco);
-							RunLoop(repeat, serialize, deserialize, type, ms, Models.Standard.Post.FactoryPoco);
+							Func<int, Models.Standard.PostState> cast = i => (Models.Standard.PostState)i;
+							Func<int, Models.Standard.DeletePost> factory1 = i => Models.Standard.DeletePost.Factory<Models.Standard.DeletePost, Models.Standard.PostState>(i, cast);
+							Func<int, Models.Standard.Post> factory2 =
+								i => Models.Standard.Post.Factory<Models.Standard.Post, Models.Standard.Vote, Models.Standard.PostState, Models.Standard.Comment>(i, cast);
+							RunLoop(repeat, serialize, deserialize, type, ms, factory1);
+							RunLoop(repeat, serialize, deserialize, type, ms, factory2);
 						}
 					}
 					catch (Exception ex)
@@ -160,6 +180,7 @@ namespace JsonBenchmark
 						ReportStatsAndRestart(null, -1, repeat);
 						Console.WriteLine("error");
 						Console.WriteLine(ex.ToString());
+						return -42;
 					}
 					break;
 				default:
@@ -167,11 +188,17 @@ namespace JsonBenchmark
 					{
 						if (target == BenchTarget.RevenjJsonFull || target == BenchTarget.RevenjJsonMinimal)
 						{
-							RunLoop(repeat, serialize, deserialize, type, ms, Models.Large.Book.FactoryDsl);
+							Func<int, LargeObjects.Genre> cast = i => (LargeObjects.Genre)i;
+							Func<int, LargeObjects.Book> factory =
+								i => Models.Large.Book.Factory<LargeObjects.Book, LargeObjects.Genre, LargeObjects.Page, LargeObjects.Headnote, LargeObjects.Footnote>(i, cast);
+							RunLoop(repeat, serialize, deserialize, type, ms, factory);
 						}
 						else
 						{
-							RunLoop(repeat, serialize, deserialize, type, ms, Models.Large.Book.FactoryPoco);
+							Func<int, Models.Large.Genre> cast = i => (Models.Large.Genre)i;
+							Func<int, Models.Large.Book> factory =
+								i => Models.Large.Book.Factory<Models.Large.Book, Models.Large.Genre, Models.Large.Page, Models.Large.Headnote, Models.Large.Footnote>(i, cast);
+							RunLoop(repeat, serialize, deserialize, type, ms, factory);
 						}
 					}
 					catch (Exception ex)
@@ -179,9 +206,14 @@ namespace JsonBenchmark
 						ReportStatsAndRestart(null, -1, repeat);
 						Console.WriteLine("error");
 						Console.WriteLine(ex.ToString());
+						return -43;
 					}
 					break;
 			}
+			Console.WriteLine("GC0: " + (GC.CollectionCount(0) - gc0));
+			Console.WriteLine("GC1: " + (GC.CollectionCount(1) - gc1));
+			Console.WriteLine("GC2: " + (GC.CollectionCount(2) - gc2));
+			return 0;
 		}
 
 		static void ReportStatsAndRestart(Stopwatch sw, long size, int incorrect)
@@ -207,15 +239,15 @@ namespace JsonBenchmark
 			for (int i = 0; i < repeat; i++)
 			{
 				ms.SetLength(0);
-				var message = factory(i);
+				var instance = factory(i);
 				if (type == BenchType.None) continue;
-				serialize(message, ms);
+				serialize(instance, ms);
 				size += ms.Position;
 				if (type == BenchType.Both || type == BenchType.Check)
 				{
 					ms.Position = 0;
 					var deser = (T)deserialize(ms, typeof(T));
-					if (type == BenchType.Check && !message.Equals(deser))
+					if (type == BenchType.Check && !instance.Equals(deser))
 					{
 						incorrect++;
 						//throw new SerializationException("not equal");
@@ -223,143 +255,6 @@ namespace JsonBenchmark
 				}
 			}
 			ReportStatsAndRestart(sw, size, incorrect);
-		}
-
-		static void SetupRevenj(
-			out Action<object, ChunkedMemoryStream> serialize,
-			out Func<ChunkedMemoryStream, Type, object> deserialize,
-			string contentType)
-		{
-			var binder = new GenericDeserializationBinder(new Lazy<ITypeResolver>(() => null));
-			IWireSerialization serialization = new WireSerialization(binder);
-			serialize = (obj, stream) => serialization.Serialize(obj, contentType, stream);
-			deserialize = (stream, type) => serialization.Deserialize(stream, type, contentType, default(StreamingContext));
-		}
-
-		static void SetupNewtonsoftJson(
-			out Action<object, ChunkedMemoryStream> serialize,
-			out Func<ChunkedMemoryStream, Type, object> deserialize)
-		{
-			var serializer = new Newtonsoft.Json.JsonSerializer();
-			serializer.TypeNameAssemblyFormat = FormatterAssemblyStyle.Simple;
-			serializer.TypeNameHandling = Newtonsoft.Json.TypeNameHandling.Auto;
-			serialize = (obj, stream) =>
-			{
-				var sw = new Newtonsoft.Json.JsonTextWriter(stream.GetWriter());
-				serializer.Serialize(sw, obj);
-				sw.Flush();
-			};
-			deserialize = (stream, type) => serializer.Deserialize(new Newtonsoft.Json.JsonTextReader(stream.GetReader()), type);
-		}
-
-		static void SetupJil(
-			out Action<object, ChunkedMemoryStream> serialize,
-			out Func<ChunkedMemoryStream, Type, object> deserialize)
-		{
-			serialize = (obj, stream) =>
-			{
-				var sw = stream.GetWriter();
-				Jil.JSON.Serialize(obj, sw);
-				sw.Flush();
-			};
-			deserialize = (stream, type) => Jil.JSON.Deserialize(stream.GetReader(), type);
-		}
-
-		static void SetupBondJson(
-			out Action<object, ChunkedMemoryStream> serialize,
-			out Func<ChunkedMemoryStream, Type, object> deserialize)
-		{
-			var serializers = new Dictionary<Type, Bond.Serializer<SimpleJsonWriter>>();
-			var deserializers = new Dictionary<Type, Bond.Deserializer<SimpleJsonReader>>();
-			serialize = (obj, stream) =>
-			{
-				var jsonWriter = new SimpleJsonWriter(stream);
-				var type = obj.GetType();
-				Bond.Serializer<SimpleJsonWriter> serializer;
-				if (!serializers.TryGetValue(type, out serializer))
-					serializers[type] = serializer = new Bond.Serializer<SimpleJsonWriter>(type);
-				serializer.Serialize(obj, jsonWriter);
-				jsonWriter.Flush();
-			};
-			deserialize = (stream, type) =>
-			{
-				var reader = new SimpleJsonReader(stream);
-				Bond.Deserializer<SimpleJsonReader> deserializer;
-				if (!deserializers.TryGetValue(type, out deserializer))
-					deserializers[type] = deserializer = new Bond.Deserializer<SimpleJsonReader>(type);
-				return deserializer.Deserialize(reader);
-			};
-		}
-
-		static void SetupBondBinary(
-			out Action<object, ChunkedMemoryStream> serialize,
-			out Func<ChunkedMemoryStream, Type, object> deserialize)
-		{
-			var serializers = new Dictionary<Type, Bond.Serializer<FastBinaryWriter<OutputStream>>>();
-			var deserializers = new Dictionary<Type, Bond.Deserializer<FastBinaryReader<InputStream>>>();
-			serialize = (obj, stream) =>
-			{
-				var output = new OutputStream(stream, 512);
-				var writer = new FastBinaryWriter<OutputStream>(output);
-				Bond.Serializer<FastBinaryWriter<OutputStream>> serializer;
-				var type = obj.GetType();
-				if (!serializers.TryGetValue(type, out serializer))
-					serializers[type] = serializer = new Bond.Serializer<FastBinaryWriter<OutputStream>>(type);
-				serializer.Serialize(obj, writer);
-				output.Flush();
-			};
-			deserialize = (stream, type) =>
-			{
-				var input = new InputStream(stream, 512);
-				var reader = new FastBinaryReader<InputStream>(input);
-				Bond.Deserializer<FastBinaryReader<InputStream>> deserializer;
-				if (!deserializers.TryGetValue(type, out deserializer))
-					deserializers[type] = deserializer = new Bond.Deserializer<FastBinaryReader<InputStream>>(type);
-				return deserializer.Deserialize(reader);
-			};
-		}
-
-		static void SetupFastJson(
-			out Action<object, ChunkedMemoryStream> serialize,
-			out Func<ChunkedMemoryStream, Type, object> deserialize)
-		{
-			serialize = (obj, stream) =>
-			{
-				var sw = stream.GetWriter();
-				sw.Write(fastJSON.JSON.ToJSON(obj));
-				sw.Flush();
-			};
-			//TODO: forced to string conversion ;(
-			deserialize = (stream, type) => fastJSON.JSON.ToObject(stream.GetReader().ReadToEnd(), type);
-		}
-
-		static void SetupServiceStack(
-			out Action<object, ChunkedMemoryStream> serialize,
-			out Func<ChunkedMemoryStream, Type, object> deserialize)
-		{
-			serialize = (obj, stream) => ServiceStack.Text.JsonSerializer.SerializeToStream(obj, obj.GetType(), stream);
-			deserialize = (stream, type) => ServiceStack.Text.JsonSerializer.DeserializeFromStream(type, stream);
-		}
-
-		static void SetupNetJSON(
-			out Action<object, ChunkedMemoryStream> serialize,
-			out Func<ChunkedMemoryStream, Type, object> deserialize)
-		{
-			var dict = new Dictionary<Type, Func<TextReader, object>>();
-			//TODO: not really nice... but let's avoid to string conversion
-			dict[typeof(Models.Small.Message)] = reader => NetJSON.NetJSON.Deserialize<Models.Small.Message>(reader);
-			dict[typeof(Models.Small.Complex)] = reader => NetJSON.NetJSON.Deserialize<Models.Small.Complex>(reader);
-			dict[typeof(Models.Small.Post)] = reader => NetJSON.NetJSON.Deserialize<Models.Small.Post>(reader);
-			dict[typeof(Models.Standard.DeletePost)] = reader => NetJSON.NetJSON.Deserialize<Models.Standard.DeletePost>(reader);
-			dict[typeof(Models.Standard.Post)] = reader => NetJSON.NetJSON.Deserialize<Models.Standard.Post>(reader);
-			dict[typeof(Models.Large.Book)] = reader => NetJSON.NetJSON.Deserialize<Models.Large.Book>(reader);
-			serialize = (obj, stream) =>
-			{
-				var writer = stream.GetWriter();
-				NetJSON.NetJSON.Serialize(obj, writer);
-				writer.Flush();
-			};
-			deserialize = (stream, type) => dict[type](stream.GetReader());
 		}
 	}
 }

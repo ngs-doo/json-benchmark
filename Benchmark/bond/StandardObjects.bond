@@ -1,0 +1,44 @@
+﻿namespace StandardObjects.Bond
+
+using DATETIME = int64;
+using GUID = blob;
+using LongArray = vector<int64>;
+
+enum PostState {
+	Draft,
+	Published,
+	Hidden
+}
+struct Vote {
+	1: int32 upvote;
+	2: int32 downvote;
+}
+struct Comment {
+	4: DATETIME created;
+	5: nullable<DATETIME> approved;
+	6: nullable<string> user;
+	7: string message;
+	8: Vote votes;
+}
+struct DeletePost {
+	1: int32 postID;
+	2: nullable<GUID> referenceId;
+	3: DATETIME lastModified;
+	4: int64 deletedBy;
+	5: nullable<string> reason;
+	6: nullable<LongArray> versions;
+	7: nullable<PostState> state;
+	8: nullable<vector<nullable<bool>>> votes;
+}
+struct Post {
+	2: int32 ID;
+	3: string title;
+	4: string text;
+	5: DATETIME created;
+	6: set<string> tags;
+	7: nullable<DATETIME> approved;
+	8: vector<Comment> comments;
+	9: Vote votes;
+	10: nullable<vector<string>> notes;
+	11: PostState state;
+}
