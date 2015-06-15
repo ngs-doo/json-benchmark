@@ -8,8 +8,9 @@ namespace JsonBenchmark
 	{
 		enum BenchTarget
 		{
-			RevenjJsonFull, RevenjJsonMinimal, ProtoBuf, NewtonsoftJson,
-			Jil, fastJSON, ServiceStack, BondJson, BondBinary, NetJSON
+			RevenjNewtonsoftJson, RevenjJsonFull, RevenjJsonMinimal,
+			NewtonsoftJson, Jil, fastJSON, ServiceStack, BondJson, NetJSON,
+			ProtoBuf, BondBinary,
 		}
 
 		enum BenchSize
@@ -25,7 +26,7 @@ namespace JsonBenchmark
 		static int Main(string[] args)
 		{
 			//args = new[] { "BondBinary", "Standard", "Check", "100" };
-			//args = new[] { "fastJSON", "Small", "Serialization", "100000" };
+			//args = new[] { "RevenjNewtonsoftJson", "Large", "Serialization", "100" };
 			var gc0 = GC.CollectionCount(0);
 			var gc1 = GC.CollectionCount(1);
 			var gc2 = GC.CollectionCount(2);
@@ -67,6 +68,9 @@ namespace JsonBenchmark
 			switch (target)
 			{
 				case BenchTarget.NewtonsoftJson:
+					LibrarySetup.SetupNewtonsoftJson(out serialize, out deserialize);
+					break;
+				case BenchTarget.RevenjNewtonsoftJson:
 					LibrarySetup.SetupNewtonsoftJson(out serialize, out deserialize);
 					break;
 				case BenchTarget.BondJson:
@@ -118,7 +122,8 @@ namespace JsonBenchmark
 							RunLoop(repeat, serialize, deserialize, type, ms, factory2);
 							RunLoop(repeat, serialize, deserialize, type, ms, factory3);
 						}
-						else if (target == BenchTarget.RevenjJsonFull || target == BenchTarget.RevenjJsonMinimal)
+						else if (target == BenchTarget.RevenjJsonFull || target == BenchTarget.RevenjJsonMinimal
+							|| target == BenchTarget.RevenjNewtonsoftJson)
 						{
 							Func<int, SmallObjects.Message> factory1 = i => Models.Small.Message.Factory<SmallObjects.Message>(i);
 							Func<int, SmallObjects.Complex> factory2 = i => Models.Small.Complex.Factory<SmallObjects.Complex>(i);
@@ -160,7 +165,8 @@ namespace JsonBenchmark
 							RunLoop(repeat, serialize, deserialize, type, ms, factory1);
 							RunLoop(repeat, serialize, deserialize, type, ms, factory2);
 						}
-						else if (target == BenchTarget.RevenjJsonFull || target == BenchTarget.RevenjJsonMinimal)
+						else if (target == BenchTarget.RevenjJsonFull || target == BenchTarget.RevenjJsonMinimal
+							|| target == BenchTarget.RevenjNewtonsoftJson)
 						{
 							Func<int, StandardObjects.PostState> cast = i => (StandardObjects.PostState)i;
 							Func<int, StandardObjects.DeletePost> factory1 =
@@ -192,7 +198,8 @@ namespace JsonBenchmark
 				default:
 					try
 					{
-						if (target == BenchTarget.RevenjJsonFull || target == BenchTarget.RevenjJsonMinimal)
+						if (target == BenchTarget.RevenjJsonFull || target == BenchTarget.RevenjJsonMinimal
+							|| target == BenchTarget.RevenjNewtonsoftJson)
 						{
 							Func<int, LargeObjects.Genre> cast = i => (LargeObjects.Genre)i;
 							Func<int, LargeObjects.Book> factory =

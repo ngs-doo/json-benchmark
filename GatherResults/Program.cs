@@ -56,7 +56,7 @@ namespace GatherResults
 			RunSinglePass("Warmup .NET", true, "RevenjJsonMinimal", "Small", null, 1);
 			RunSinglePass("Warmup JVM", false, "DslJavaMinimal", "Small", null, 1);
 			var small1 = RunSmall(repeat, 1);
-			var large1 = RunLarge(repeat, 1);
+			var std1 = RunStandard(repeat, 1);
 			var small100k = RunSmall(repeat, 100000);
 			var small1m = RunSmall(repeat, 1000000);
 			var small10m = RunSmall(repeat, 10000000);
@@ -73,7 +73,7 @@ namespace GatherResults
 			var vm = new ViewModel[]
 			{
 				ViewModel.Create("Startup times: SmallObject.Message",small1, t => t.Message),
-				new ViewModel("Startup times: LargeObjects.Book", large1),
+				ViewModel.Create("Startup times: StandardObjects.Post", std1, t => t.Post),
 				ViewModel.Create("100.000 SmallObjects.Message", small100k, t => t.Message),
 				ViewModel.Create("1.000.000 SmallObjects.Message", small1m, t => t.Message),
 				ViewModel.Create("10.000.000 SmallObjects.Message", small10m, t => t.Message),

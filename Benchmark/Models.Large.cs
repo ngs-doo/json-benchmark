@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Runtime.Serialization;
 using System.Text;
 
@@ -12,8 +11,6 @@ namespace JsonBenchmark.Models.Large
 	{
 		private static DateTime NOW = DateTime.UtcNow;
 		private static List<byte[]> ILLUSTRATIONS = new List<byte[]>();
-		private static List<T> ListFactory<T>() { return new List<T>(); }
-		private static MethodInfo ListMethod;
 		static Book()
 		{
 			var rnd = new Random(1);
@@ -23,8 +20,6 @@ namespace JsonBenchmark.Models.Large
 				rnd.NextBytes(buf);
 				ILLUSTRATIONS.Add(buf);
 			}
-			Func<List<object>> listFunc = ListFactory<object>;
-			ListMethod = listFunc.Method.GetGenericMethodDefinition();
 		}
 
 		public Book()
@@ -174,7 +169,7 @@ namespace JsonBenchmark.Models.Large
 		public DateTime createadAt { get; set; }
 		[DataMember]
 		public long index { get; set; }
-		public override int GetHashCode() { return note.GetHashCode(); }
+		public override int GetHashCode() { return (int)index; }
 		public override bool Equals(object obj) { return Equals(obj as Footnote); }
 		public bool Equals(Footnote other)
 		{
@@ -191,7 +186,7 @@ namespace JsonBenchmark.Models.Large
 		public string writtenBy { get; set; }
 		[DataMember]
 		public DateTime? modifiedAt { get; set; }
-		public override int GetHashCode() { return note.GetHashCode(); }
+		public override int GetHashCode() { return (modifiedAt ?? DateTime.MinValue).GetHashCode(); }
 		public override bool Equals(object obj) { return Equals(obj as Headnote); }
 		public bool Equals(Headnote other)
 		{
