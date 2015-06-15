@@ -33,7 +33,7 @@ public class Main {
 	}
 
 	public static void main(String[] args) throws Exception {
-		//args = new String[]{"Flexjson", "Small", "Check", "100"};
+		//args = new String[]{"Boon", "Small", "Both", "100"};
 		if (args.length != 4) {
 			System.out.printf(
 					"Expected usage: java -jar json-benchamrk.jar (%s) (%s) (%s) n",
@@ -99,31 +99,19 @@ public class Main {
 			try {
 				testSmall(repeat, serializer, type);
 			} catch (Exception ex) {
-				reportStats(System.nanoTime(), -1, repeat);
-				reportStats(System.nanoTime(), -1, repeat);
-				reportStats(System.nanoTime(), -1, repeat);
-				System.out.println("error");
-				System.out.println(ex.fillInStackTrace());
-				System.exit(-41);
+				reportError(ex);
 			}
 		} else if (size == BenchSize.Standard) {
 			try {
 				testStandard(repeat, serializer, type);
 			} catch (Exception ex) {
-				reportStats(System.nanoTime(), -1, repeat);
-				reportStats(System.nanoTime(), -1, repeat);
-				System.out.println("error");
-				System.out.println(ex.fillInStackTrace());
-				System.exit(-42);
+				reportError(ex);
 			}
 		} else {
 			try {
 				testLarge(repeat, serializer, type);
 			} catch (Exception ex) {
-				reportStats(System.nanoTime(), -1, repeat);
-				System.out.println("error");
-				System.out.println(ex.fillInStackTrace());
-				System.exit(-43);
+				reportError(ex);
 			}
 		}
 	}
@@ -134,6 +122,21 @@ public class Main {
 		System.out.println("duration = " + timediff);
 		System.out.println("size = " + result);
 		System.out.println("invalid deserialization = " + incorrect);
+	}
+
+	static void reportError(Exception ex) {
+		System.out.println("duration = -1");
+		System.out.println("size = -1");
+		System.out.println("invalid deserialization = -1");
+		System.out.println("duration = -1");
+		System.out.println("size = -1");
+		System.out.println("invalid deserialization = -1");
+		System.out.println("duration = -1");
+		System.out.println("size = -1");
+		System.out.println("invalid deserialization = -1");
+		System.out.println("error");
+		System.out.println(ex.fillInStackTrace());
+		System.exit(-42);
 	}
 
 	static void testSmall(int repeat, Serializer serializer, BenchType type) throws IOException {

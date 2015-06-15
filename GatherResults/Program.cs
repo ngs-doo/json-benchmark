@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Threading;
 using Newtonsoft.Json;
 
 namespace GatherResults
@@ -191,17 +192,27 @@ namespace GatherResults
 			return result;
 		}
 
+		private static readonly List<Stats> EmptyStats = new List<Stats>(new[]{
+			new Stats{ Duration = null, Size = null},
+			new Stats{ Duration = null, Size = null},
+			new Stats{ Duration = null, Size = null}
+		});
+
 		static AggregatePass GetherDuration(string type, bool? both, int count)
 		{
 			var NJ = RunSinglePass("NewtonsoftJson", true, "NewtonsoftJson", type, both, count);
 			var REV = RunSinglePass("Revenj", true, "RevenjJsonMinimal", type, both, count);
-			var SS = RunSinglePass("Service Stack", true, "ServiceStack", type, both, count);
-			var JIL = RunSinglePass("Jil", true, "Jil", type, both, count);
-			var NN = RunSinglePass("NetJSON", true, "NetJSON", type, both, count);
+			//TODO hacks since most libraries fail
+			var SS = type != "Large" ? RunSinglePass("Service Stack", true, "ServiceStack", type, both, count) : EmptyStats;
+			var JIL = type == "Small" ? RunSinglePass("Jil", true, "Jil", type, both, count) : EmptyStats;
+			var NN = type == "Small" ? RunSinglePass("NetJSON", true, "NetJSON", type, both, count) : EmptyStats;
+			var NF = type == "Small" ? RunSinglePass("fastJSON", true, "fastJSON", type, both, count) : EmptyStats;
 			var JJ = RunSinglePass("Jackson", false, "JacksonAfterburner", type, both, count);
 			var JD = RunSinglePass("DSL Platform Java", false, "DslJavaMinimal", type, both, count);
-			var JS = RunSinglePass("Genson", false, "Genson", type, both, count);
-			var JG = RunSinglePass("Gson", false, "Gson", type, both, count);
+			var JS = type != "Large" ? RunSinglePass("Genson", false, "Genson", type, both, count) : EmptyStats;
+			var JG = type != "Large" ? RunSinglePass("Gson", false, "Gson", type, both, count) : EmptyStats;
+			var JB = type == "Small" ? RunSinglePass("Boon", false, "Boon", type, both, count) : EmptyStats;
+			var JA = type == "Small" ? RunSinglePass("Alibaba", false, "Alibaba", type, both, count) : EmptyStats;
 			return new AggregatePass
 			{
 				Newtonsoft = NJ,
@@ -209,10 +220,13 @@ namespace GatherResults
 				ServiceStack = SS,
 				Jil = JIL,
 				NetJSON = NN,
+				fastJSON = NF,
 				Jackson = JJ,
 				DslJava = JD,
 				Genson = JS,
 				Gson = JG,
+				Alibaba = JA,
+				Boon = JB
 			};
 		}
 
@@ -231,15 +245,15 @@ namespace GatherResults
 			var result = new List<Stats>();
 			var process = Process.Start(info);
 			process.WaitForExit(5000 + count * 500);
-			if (!process.HasExited || process.ExitCode != 0)
+			if (both != null) Thread.Sleep(200);//let's wait for cleanup if required
+			if (!process.HasExited)
 			{
 				Console.WriteLine();
-				var error = process.HasExited ? process.StandardError.ReadToEnd() : "Timeout";
 				process.Close();
-				Console.WriteLine(error);
-				result.Add(new Stats { Duration = -1, Size = -1 });
-				result.Add(new Stats { Duration = -1, Size = -1 });
-				result.Add(new Stats { Duration = -1, Size = -1 });
+				Console.WriteLine("Timeout");
+				result.Add(new Stats { Duration = null, Size = null });
+				result.Add(new Stats { Duration = null, Size = null });
+				result.Add(new Stats { Duration = null, Size = null });
 				return result;
 			}
 			var lines = process.StandardOutput.ReadToEnd().Split('\n');
@@ -252,21 +266,27 @@ namespace GatherResults
 				try
 				{
 					Console.WriteLine(description + ": duration = " + duration[1].Trim() + ", size = " + size[1].Trim() + ", errors = " + errors[1].Trim());
-					result.Add(new Stats { Duration = int.Parse(duration[1]), Size = long.Parse(size[1]) });
+					if (duration[1].Trim() == "-1")
+						result.Add(new Stats { Duration = null, Size = null });
+					else
+						result.Add(new Stats { Duration = int.Parse(duration[1]), Size = long.Parse(size[1]) });
 				}
 				catch
 				{
-					result.Add(new Stats { Duration = -1, Size = -1 });
+					result.Add(new Stats { Duration = null, Size = null });
 				}
 			}
+			result.Add(new Stats { Duration = null, Size = null });
+			result.Add(new Stats { Duration = null, Size = null });
+			result.Add(new Stats { Duration = null, Size = null });
 			return result;
 		}
 	}
 
 	struct Stats
 	{
-		public int Duration;
-		public long Size;
+		public int? Duration;
+		public long? Size;
 	}
 
 	class AggregatePass
@@ -275,11 +295,14 @@ namespace GatherResults
 		public List<Stats> Revenj;
 		public List<Stats> Jil;
 		public List<Stats> NetJSON;
+		public List<Stats> fastJSON;
 		public List<Stats> ServiceStack;
 		public List<Stats> Jackson;
 		public List<Stats> DslJava;
 		public List<Stats> Genson;
 		public List<Stats> Gson;
+		public List<Stats> Alibaba;
+		public List<Stats> Boon;
 
 		public Result Extract(int index)
 		{
@@ -289,11 +312,14 @@ namespace GatherResults
 				Revenj = Revenj[index],
 				ServiceStack = ServiceStack[index],
 				Jil = Jil[index],
+				fastJSON = fastJSON[index],
 				NetJSON = NetJSON[index],
 				Jackson = Jackson[index],
 				DslJava = DslJava[index],
 				Genson = Genson[index],
 				Gson = Gson[index],
+				Alibaba = Alibaba[index],
+				Boon = Boon[index],
 			};
 		}
 	}
@@ -303,12 +329,15 @@ namespace GatherResults
 		public Stats Newtonsoft;
 		public Stats Revenj;
 		public Stats Jil;
+		public Stats fastJSON;
 		public Stats ServiceStack;
 		public Stats NetJSON;
 		public Stats Jackson;
 		public Stats DslJava;
 		public Stats Genson;
 		public Stats Gson;
+		public Stats Alibaba;
+		public Stats Boon;
 	}
 
 	class Run<T>

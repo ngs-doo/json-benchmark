@@ -112,6 +112,7 @@ namespace JsonBenchmark
 			out Action<object, ChunkedMemoryStream> serialize,
 			out Func<ChunkedMemoryStream, Type, object> deserialize)
 		{
+			fastJSON.JSON.Parameters.UseExtensions = false;
 			serialize = (obj, stream) =>
 			{
 				var sw = stream.GetWriter();
@@ -134,21 +135,28 @@ namespace JsonBenchmark
 			out Action<object, ChunkedMemoryStream> serialize,
 			out Func<ChunkedMemoryStream, Type, object> deserialize)
 		{
-			var dict = new Dictionary<Type, Func<TextReader, object>>();
+			var serializers = new Dictionary<Type, Action<TextWriter, object>>();
+			var deserializers = new Dictionary<Type, Func<TextReader, object>>();
 			//TODO: not really nice... but let's avoid to string conversion
-			dict[typeof(Models.Small.Message)] = reader => NetJSON.NetJSON.Deserialize<Models.Small.Message>(reader);
-			dict[typeof(Models.Small.Complex)] = reader => NetJSON.NetJSON.Deserialize<Models.Small.Complex>(reader);
-			dict[typeof(Models.Small.Post)] = reader => NetJSON.NetJSON.Deserialize<Models.Small.Post>(reader);
-			dict[typeof(Models.Standard.DeletePost)] = reader => NetJSON.NetJSON.Deserialize<Models.Standard.DeletePost>(reader);
-			dict[typeof(Models.Standard.Post)] = reader => NetJSON.NetJSON.Deserialize<Models.Standard.Post>(reader);
-			dict[typeof(Models.Large.Book)] = reader => NetJSON.NetJSON.Deserialize<Models.Large.Book>(reader);
+			serializers[typeof(Models.Small.Message)] = (tw, obj) => NetJSON.NetJSON.Serialize<Models.Small.Message>((Models.Small.Message)obj, tw);
+			serializers[typeof(Models.Small.Complex)] = (tw, obj) => NetJSON.NetJSON.Serialize<Models.Small.Complex>((Models.Small.Complex)obj, tw);
+			serializers[typeof(Models.Small.Post)] = (tw, obj) => NetJSON.NetJSON.Serialize<Models.Small.Post>((Models.Small.Post)obj, tw);
+			serializers[typeof(Models.Standard.DeletePost)] = (tw, obj) => NetJSON.NetJSON.Serialize<Models.Standard.DeletePost>((Models.Standard.DeletePost)obj, tw);
+			serializers[typeof(Models.Standard.Post)] = (tw, obj) => NetJSON.NetJSON.Serialize<Models.Standard.Post>((Models.Standard.Post)obj, tw);
+			serializers[typeof(Models.Large.Book)] = (tw, obj) => NetJSON.NetJSON.Serialize<Models.Large.Book>((Models.Large.Book)obj, tw);
+			deserializers[typeof(Models.Small.Message)] = reader => NetJSON.NetJSON.Deserialize<Models.Small.Message>(reader);
+			deserializers[typeof(Models.Small.Complex)] = reader => NetJSON.NetJSON.Deserialize<Models.Small.Complex>(reader);
+			deserializers[typeof(Models.Small.Post)] = reader => NetJSON.NetJSON.Deserialize<Models.Small.Post>(reader);
+			deserializers[typeof(Models.Standard.DeletePost)] = reader => NetJSON.NetJSON.Deserialize<Models.Standard.DeletePost>(reader);
+			deserializers[typeof(Models.Standard.Post)] = reader => NetJSON.NetJSON.Deserialize<Models.Standard.Post>(reader);
+			deserializers[typeof(Models.Large.Book)] = reader => NetJSON.NetJSON.Deserialize<Models.Large.Book>(reader);
 			serialize = (obj, stream) =>
 			{
 				var writer = stream.GetWriter();
-				NetJSON.NetJSON.Serialize(obj, writer);
+				serializers[obj.GetType()](writer, obj);
 				writer.Flush();
 			};
-			deserialize = (stream, type) => dict[type](stream.GetReader());
+			deserialize = (stream, type) => deserializers[type](stream.GetReader());
 		}
 	}
 }

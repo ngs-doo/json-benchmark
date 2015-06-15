@@ -25,7 +25,7 @@ namespace JsonBenchmark
 		static int Main(string[] args)
 		{
 			//args = new[] { "BondBinary", "Standard", "Check", "100" };
-			//args = new[] { "NewtonsoftJson", "Large", "Check", "100" };
+			//args = new[] { "fastJSON", "Small", "Serialization", "100000" };
 			var gc0 = GC.CollectionCount(0);
 			var gc1 = GC.CollectionCount(1);
 			var gc2 = GC.CollectionCount(2);
@@ -84,15 +84,21 @@ namespace JsonBenchmark
 				case BenchTarget.ServiceStack:
 					LibrarySetup.SetupServiceStack(out serialize, out deserialize);
 					break;
+				case BenchTarget.NetJSON:
+					LibrarySetup.SetupNetJSON(out serialize, out deserialize);
+					break;
 				case BenchTarget.ProtoBuf:
 					LibrarySetup.SetupRevenj(out serialize, out deserialize, "application/x-protobuf");
 					break;
 				case BenchTarget.RevenjJsonFull:
 					LibrarySetup.SetupRevenj(out serialize, out deserialize, "application/json");
 					break;
-				default:
+				case BenchTarget.RevenjJsonMinimal:
 					LibrarySetup.SetupRevenj(out serialize, out deserialize, "application/json;minimal");
 					break;
+				default:
+					Console.WriteLine("Unwired bench type: " + type);
+					return -123;
 			}
 			var ms = new ChunkedMemoryStream();
 			switch (size)
