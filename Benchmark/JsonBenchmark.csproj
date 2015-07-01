@@ -34,6 +34,24 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="Bond">
       <HintPath>..\app\Bond.dll</HintPath>
@@ -47,8 +65,8 @@
     <Reference Include="Bond.JSON">
       <HintPath>..\app\Bond.JSON.dll</HintPath>
     </Reference>
-    <Reference Include="fastjson">
-      <HintPath>..\app\fastjson.dll</HintPath>
+    <Reference Include="fastJSON">
+      <HintPath>..\app\fastJSON.dll</HintPath>
     </Reference>
     <Reference Include="Jil">
       <HintPath>..\app\Jil.dll</HintPath>
