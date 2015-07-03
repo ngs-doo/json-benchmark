@@ -30,11 +30,11 @@ To give more interesting results, we'll also run tests on Mono to see how it com
 ###Libraries
 
  * **Newtonsoft.Json 6.0.8** - "Popular high-performance JSON framework for .NET"
- * **Revenj.Json 1.2.0** - Part of Revenj framework. POCO + serialization/deserialization methods 
+ * **Revenj.Json 1.2.1** - Part of Revenj framework. POCO + serialization/deserialization methods 
  * **Service Stack 4.0.40** - ".NET's fastest JSON Serializer"
  * **fastJSON 2.1.14** - "smallest, fastest polymorphic JSON serializer"
  * **Jil 2.10.0** - "A fast JSON serializer and deserializer"
- * **NetJSON 1.0.7** - "Faster than Any Binary?"
+ * **NetJSON 1.0.8** - "Faster than Any Binary?"
  * **Jackson 2.5.4** - "aims to be the best possible combination of fast, correct, lightweight, and ergonomic for developers"
  * **DSL client Java 1.3.0** - Part of DSL Platform Java library. POJO + serialization/deserialization methods
  * **Boon 0.33** - "Boon is the probably the fastest way to serialize and parse JSON in Java so far for your project"
@@ -52,7 +52,7 @@ Let's see how much of an issue that is:
 
 ![Startup times](results/startup-small.png)
 
-As expected baked in serialization code has minimal startup time, since it was amortized at compile time. While this can be nullified on servers with longer startup, it can cause noticeable delays on mobile apps. Java seems to be doing exceptionally well on startup times. It's really overdue to stop using "Knock, knock, who's there joke" about it.
+As expected baked in serialization code has minimal startup time, since it was amortized at compile time. While this can be nullified on servers with longer startup, it can cause noticeable delays on mobile apps. Java seems to be doing exceptionally well on startup times.
 
 ###Small model
 
@@ -102,7 +102,7 @@ Intel(R) Core(TM) i5-4440 CPU @ 3.10GHz / 32GB RAM
 
 Results for [Windows](results/results-windows.xlsx).
 Results for [Linux](results/results-linux.xlsx).
-.NET vs Mono [comparison](results/result-comparison.xlsx).
+.NET vs Mono [comparison](results/result-dotnet-vs-mono.xlsx).
 
 ###Reproducing results
 
@@ -127,6 +127,6 @@ To check if library is working correctly, use **Check** argument. Some libraries
 * JVM seems to always be faster after optimization kicks-in
 * LOH design issue prevents .NET to match JVM in speed
 * Newtonsoft.Json is comparable with Jackson on features/quality
-* Most libraries are toys and people have religious attachment to them
+* Most libraries are not really mature
 * Almost everyone claims to be THE FASTEST 
-* Non UTC DateTime can cause really slow serialization on .NET
+* JSON can compete with binary codecs in speed
