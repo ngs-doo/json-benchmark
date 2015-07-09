@@ -127,8 +127,20 @@ namespace JsonBenchmark
 			out Action<object, ChunkedMemoryStream> serialize,
 			out Func<ChunkedMemoryStream, Type, object> deserialize)
 		{
-			serialize = (obj, stream) => ServiceStack.Text.JsonSerializer.SerializeToStream(obj, obj.GetType(), stream);
-			deserialize = (stream, type) => ServiceStack.Text.JsonSerializer.DeserializeFromStream(type, stream);
+			serialize = (obj, stream) =>
+			{
+				var writer = stream.GetWriter();
+				ServiceStack.Text.JsonSerializer.SerializeToWriter(obj, writer);
+				writer.Flush();
+				//let's reuse reader and writer since it's faster than sending stream
+				//ServiceStack.Text.JsonSerializer.SerializeToStream(obj, obj.GetType(), stream);
+			};
+			deserialize = (stream, type) =>
+			{
+				var reader = stream.GetReader();
+				return ServiceStack.Text.JsonSerializer.DeserializeFromReader(reader, type);
+				//ServiceStack.Text.JsonSerializer.DeserializeFromStream(type, stream);
+			};
 		}
 
 		public static void SetupNetJSON(

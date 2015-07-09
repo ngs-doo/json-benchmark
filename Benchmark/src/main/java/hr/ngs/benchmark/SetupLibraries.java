@@ -30,14 +30,17 @@ import org.boon.primitive.CharBuf;
 import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.StringReader;
 import java.io.StringWriter;
 import java.lang.reflect.Type;
+import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.util.*;
 
 public class SetupLibraries {
+
+	private final static Charset UTF8 = Charset.forName("UTF-8");
 
 	static Serializer setupDslClient(final boolean minimal) throws IOException {
 		final DslJsonSerialization json = new DslJsonSerialization(null);
@@ -157,23 +160,20 @@ public class SetupLibraries {
 				.addTypeSerializer(DateTime.class, new BoonDateTimeSerializer())
 				.create();
 		final org.boon.json.ObjectMapper mapper =  JsonFactory.create();
+		final CharBuf cb = CharBuf.createCharBuf();
 		return new Serializer() {
 			@Override
 			public Bytes serialize(JsonObject arg) throws IOException {
-				CharBuf cb = serializer.serialize(arg);
+				serializer.serialize(cb, arg);
 				cb.flush();
 				String json = cb.toStringAndRecycle();
-				byte[] result = json.getBytes("UTF-8");
+				byte[] result = json.getBytes(UTF8);
 				return new Bytes(result, result.length);
 			}
 
 			@Override
 			public <T> T deserialize(Class<T> manifest, Bytes input) throws IOException {
-				if (input.length == input.content.length) {
-					return mapper.readValue(input.content, manifest);
-				} else {
-					return mapper.readValue(Arrays.copyOf(input.content, input.length), manifest);
-				}
+				return mapper.readValue(new String(input.content, 0, input.length, UTF8), manifest);
 			}
 		};
 	}
@@ -218,19 +218,20 @@ public class SetupLibraries {
 				StringWriter sw = new StringWriter();
 				gson.toJson(arg, sw);
 				sw.flush();
-				byte[] result = sw.toString().getBytes("UTF-8");
+				byte[] result = sw.toString().getBytes(UTF8);
 				return new Bytes(result, result.length);
 			}
 
 			@Override
 			public <T> T deserialize(Class<T> manifest, Bytes input) throws IOException {
-				return gson.fromJson(new String(input.content, 0, input.length, "UTF-8"), manifest);
+				return gson.fromJson(new String(input.content, 0, input.length, UTF8), manifest);
 			}
 		};
 	}
 
 	//TODO no custom handlers!?
 	static Serializer setupAlibaba() throws IOException {
+		final CharsetDecoder utf8 = ThreadLocalCache.getUTF8Decoder();
 		return new Serializer() {
 			@Override
 			public Bytes serialize(JsonObject arg) throws IOException {
@@ -240,7 +241,6 @@ public class SetupLibraries {
 
 			@Override
 			public <T> T deserialize(Class<T> manifest, Bytes input) throws IOException {
-				CharsetDecoder utf8 = ThreadLocalCache.getUTF8Decoder();
 				return JSON.parseObject(input.content, 0, input.length, utf8, manifest, Feature.DisableCircularReferenceDetect);
 			}
 		};
@@ -258,11 +258,7 @@ public class SetupLibraries {
 
 			@Override
 			public <T> T deserialize(Class<T> manifest, Bytes input) throws IOException {
-				if (input.length == input.content.length) {
-					return genson.deserialize(input.content, manifest);
-				} else {
-					return genson.deserialize(Arrays.copyOf(input.content, input.length), manifest);
-				}
+				return genson.deserialize(new ByteArrayInputStream(input.content, 0, input.length), manifest);
 			}
 		};
 	}
@@ -273,15 +269,14 @@ public class SetupLibraries {
 		return new Serializer() {
 			@Override
 			public Bytes serialize(JsonObject arg) throws IOException {
-				byte[] result = serializer.serialize(arg).getBytes("UTF-8");
+				byte[] result = serializer.serialize(arg).getBytes(UTF8);
 				return new Bytes(result, result.length);
 			}
 
 			@Override
 			public <T> T deserialize(Class<T> manifest, Bytes input) throws IOException {
-				String json = new String(input.content, 0, input.length, "UTF-8");
 				JSONDeserializer<T> deserializer = new JSONDeserializer<T>();
-				return deserializer.deserialize(json, manifest);
+				return deserializer.deserialize(new String(input.content, 0, input.length, UTF8), manifest);
 			}
 		};
 	}
