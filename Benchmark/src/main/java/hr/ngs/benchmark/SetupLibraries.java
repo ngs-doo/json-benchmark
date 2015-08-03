@@ -20,6 +20,9 @@ import com.google.gson.JsonSerializer;
 import com.owlike.genson.Genson;
 import com.owlike.genson.GensonBuilder;
 import com.owlike.genson.ext.jodatime.JodaTimeBundle;
+import de.javakaffee.kryoserializers.UUIDSerializer;
+import de.javakaffee.kryoserializers.jodatime.JodaDateTimeSerializer;
+import de.javakaffee.kryoserializers.jodatime.JodaLocalDateSerializer;
 import flexjson.JSONDeserializer;
 import flexjson.JSONSerializer;
 import org.boon.json.JsonFactory;
@@ -29,6 +32,9 @@ import org.boon.json.serializers.JsonSerializerInternal;
 import org.boon.primitive.CharBuf;
 import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
+import org.nustaq.serialization.FSTConfiguration;
+import org.nustaq.serialization.FSTObjectInput;
+import org.nustaq.serialization.FSTObjectOutput;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -137,16 +143,19 @@ public class SetupLibraries {
 		public Class type() {
 			return LocalDate.class;
 		}
+
 		@Override
 		public void serializeObject(JsonSerializerInternal jsonSerializerInternal, Object o, CharBuf charBuf) {
 			charBuf.write(o.toString());
 		}
 	}
+
 	static class BoonDateTimeSerializer implements CustomObjectSerializer {
 		@Override
 		public Class type() {
 			return DateTime.class;
 		}
+
 		@Override
 		public void serializeObject(JsonSerializerInternal jsonSerializerInternal, Object o, CharBuf charBuf) {
 			charBuf.write(o.toString());
@@ -159,7 +168,7 @@ public class SetupLibraries {
 				.addTypeSerializer(LocalDate.class, new BoonLocalDateSerializer())
 				.addTypeSerializer(DateTime.class, new BoonDateTimeSerializer())
 				.create();
-		final org.boon.json.ObjectMapper mapper =  JsonFactory.create();
+		final org.boon.json.ObjectMapper mapper = JsonFactory.create();
 		final CharBuf cb = CharBuf.createCharBuf();
 		return new Serializer() {
 			@Override
@@ -189,6 +198,7 @@ public class SetupLibraries {
 			return DateTime.parse(json.getAsString());
 		}
 	}
+
 	private static class GsonLocalDateTypeConverter implements JsonSerializer<LocalDate>, JsonDeserializer<LocalDate> {
 		@Override
 		public JsonElement serialize(LocalDate src, Type srcType, JsonSerializationContext context) {
@@ -277,6 +287,58 @@ public class SetupLibraries {
 			public <T> T deserialize(Class<T> manifest, Bytes input) throws IOException {
 				JSONDeserializer<T> deserializer = new JSONDeserializer<T>();
 				return deserializer.deserialize(new String(input.content, 0, input.length, UTF8), manifest);
+			}
+		};
+	}
+
+	static Serializer setupKryo() throws IOException {
+		final com.esotericsoftware.kryo.Kryo kryo = new com.esotericsoftware.kryo.Kryo();
+		kryo.setReferences(false);
+		kryo.register(DateTime.class, new JodaDateTimeSerializer());
+		kryo.register(LocalDate.class, new JodaLocalDateSerializer());
+		kryo.register(UUID.class, new UUIDSerializer());
+		final byte[] buffer = new byte[8192];
+		final com.esotericsoftware.kryo.io.Output kryoOutput = new com.esotericsoftware.kryo.io.Output(buffer, -1);
+		final com.esotericsoftware.kryo.io.Input kryoInput = new com.esotericsoftware.kryo.io.Input(buffer);
+
+		return new Serializer() {
+			@Override
+			public Bytes serialize(JsonObject arg) throws IOException {
+				kryoOutput.setBuffer(buffer, -1);
+				kryo.writeObject(kryoOutput, arg);
+				return new Bytes(kryoOutput.getBuffer(), kryoOutput.position());
+			}
+
+			@Override
+			public <T> T deserialize(Class<T> manifest, Bytes input) throws IOException {
+				kryoInput.setBuffer(input.content, 0, input.length);
+				return (T) kryo.readObject(kryoInput, manifest);
+			}
+		};
+	}
+
+	static Serializer setupFst() throws IOException {
+		final FSTConfiguration conf = FSTConfiguration.createDefaultConfiguration();
+		conf.setShareReferences(false);
+		final FSTObjectInput objectInput = new FSTObjectInput(conf);
+		final FSTObjectOutput objectOutput = new FSTObjectOutput(conf);
+
+		return new Serializer() {
+			@Override
+			public Bytes serialize(JsonObject arg) throws IOException {
+				objectOutput.resetForReUse();
+				objectOutput.writeObject(arg, arg.getClass());
+				return new Bytes(objectOutput.getBuffer(), objectOutput.getWritten());
+			}
+
+			@Override
+			public <T> T deserialize(Class<T> manifest, Bytes input) throws IOException {
+				objectInput.resetForReuseUseArray(input.content, input.length);
+				try {
+					return (T) objectInput.readObject(manifest);
+				} catch (Exception e) {
+					throw new IOException(e);
+				}
 			}
 		};
 	}

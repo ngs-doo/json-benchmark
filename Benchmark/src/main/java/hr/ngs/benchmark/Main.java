@@ -10,9 +10,10 @@ import java.util.*;
 
 public class Main {
 
-	static enum BenchTarget {
+	enum BenchTarget {
 		DslJavaFull, DslJavaMinimal, Jackson, JacksonAfterburner,
-		Boon, Gson, Genson, Alibaba, Flexjson
+		Boon, Gson, Genson, Alibaba, Flexjson,
+		Kryo, FST
 	}
 
 	enum BenchSize {
@@ -33,7 +34,7 @@ public class Main {
 	}
 
 	public static void main(String[] args) throws Exception {
-		//args = new String[]{"Boon", "Small", "Both", "100"};
+		//args = new String[]{"Kryo", "Small", "Both", "10000000"};
 		if (args.length != 4) {
 			System.out.printf(
 					"Expected usage: java -jar json-benchamrk.jar (%s) (%s) (%s) n",
@@ -90,10 +91,18 @@ public class Main {
 			serializer = SetupLibraries.setupGson();
 		} else if (target == BenchTarget.Genson) {
 			serializer = SetupLibraries.setupGenson();
+		} else if (target == BenchTarget.Kryo) {
+			serializer = SetupLibraries.setupKryo();
+		} else if (target == BenchTarget.FST) {
+			serializer = SetupLibraries.setupFst();
 		} else if (target == BenchTarget.DslJavaFull) {
 			serializer = SetupLibraries.setupDslClient(false);
-		} else {
+		} else if (target == BenchTarget.DslJavaMinimal) {
 			serializer = SetupLibraries.setupDslClient(true);
+		} else {
+			System.out.println("Unmapped target ;(");
+			System.exit(-99);
+			return;
 		}
 		if (size == BenchSize.Small) {
 			try {
