@@ -1,0 +1,10 @@
+namespace FlatBuf.FlatBuf.SmallObjects.SmallObjects;
+
+table Post {
+	ID:string;//guid;
+	title:string;
+	active:bool;
+	created:long;//date;
+}
+
+root_type Post;

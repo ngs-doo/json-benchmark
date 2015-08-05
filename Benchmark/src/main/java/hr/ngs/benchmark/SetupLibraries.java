@@ -13,6 +13,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
+import com.google.flatbuffers.FlatBufferBuilder;
 import com.google.gson.*;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonParseException;
@@ -40,6 +41,8 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.lang.reflect.Type;
+import java.math.BigDecimal;
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.util.*;
@@ -339,6 +342,76 @@ public class SetupLibraries {
 				} catch (Exception e) {
 					throw new IOException(e);
 				}
+			}
+		};
+	}
+
+	static Serializer setupFlatBuf() throws IOException {
+		final FlatBufferBuilder fbb = new FlatBufferBuilder();
+		final byte[] zeroBasedArray = new byte[1024 * 1024];
+
+		return new Serializer() {
+			@Override
+			public Bytes serialize(JsonObject arg) throws IOException {
+				if (arg instanceof hr.ngs.benchmark.SmallObjects.Message) {
+					hr.ngs.benchmark.SmallObjects.Message msg = (hr.ngs.benchmark.SmallObjects.Message) arg;
+					int offset = FlatBuf.SmallObjects.Message.createMessage(
+							fbb,
+							fbb.createString(msg.getMessage()),
+							msg.getVersion());
+					FlatBuf.SmallObjects.Message.finishMessageBuffer(fbb, offset);
+				} else if (arg instanceof hr.ngs.benchmark.SmallObjects.Complex) {
+					hr.ngs.benchmark.SmallObjects.Complex c = (hr.ngs.benchmark.SmallObjects.Complex) arg;
+					int offset = FlatBuf.SmallObjects.Complex.createComplex(
+							fbb,
+							fbb.createString(c.getX().toString()),
+							c.getY(),
+							c.getZ());
+					FlatBuf.SmallObjects.Complex.finishComplexBuffer(fbb, offset);
+				} else if (arg instanceof hr.ngs.benchmark.SmallObjects.Post) {
+					hr.ngs.benchmark.SmallObjects.Post post = (hr.ngs.benchmark.SmallObjects.Post) arg;
+					int offset = FlatBuf.SmallObjects.Post.createPost(
+							fbb,
+							fbb.createString(post.getID().toString()),
+							fbb.createString(post.getTitle()),
+							post.getActive(),
+							post.getCreated().toDate().getTime());
+					FlatBuf.SmallObjects.Post.finishPostBuffer(fbb, offset);
+				} else {
+					throw new IOException("Unknown target");
+				}
+				ByteBuffer bb = fbb.dataBuffer();
+				//TODO: unfortunate copy ;(
+				int len = bb.capacity() - bb.position();
+				System.arraycopy(bb.array(), bb.position(), zeroBasedArray, 0, len);
+				//TODO: no reset :D
+				fbb.init(fbb.dataBuffer());
+				return new Bytes(zeroBasedArray, len);
+			}
+
+			@Override
+			public <T> T deserialize(Class<T> manifest, Bytes input) throws IOException {
+				ByteBuffer bb = ByteBuffer.wrap(input.content, 0, input.length);
+				if (manifest.equals(hr.ngs.benchmark.SmallObjects.Message.class)) {
+					FlatBuf.SmallObjects.Message message = FlatBuf.SmallObjects.Message.getRootAsMessage(bb);
+					return (T) new hr.ngs.benchmark.SmallObjects.Message()
+							.setMessage(message.message())
+							.setVersion(message.version());
+				} else if (manifest.equals(hr.ngs.benchmark.SmallObjects.Complex.class) ) {
+					FlatBuf.SmallObjects.Complex c = FlatBuf.SmallObjects.Complex.getRootAsComplex(bb);
+					return (T) new hr.ngs.benchmark.SmallObjects.Complex()
+							.setX(new BigDecimal(c.x()))
+							.setY(c.y())
+							.setZ(c.z());
+				} else if (manifest.equals(hr.ngs.benchmark.SmallObjects.Post.class)) {
+					FlatBuf.SmallObjects.Post post = FlatBuf.SmallObjects.Post.getRootAsPost(bb);
+					return (T) new hr.ngs.benchmark.SmallObjects.Post()
+							.setID(UUID.fromString(post.ID()))
+							.setTitle(post.title())
+							.setActive(post.active())
+							.setCreated(new LocalDate(post.created()));
+				}
+				return null;
 			}
 		};
 	}

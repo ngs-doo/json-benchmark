@@ -1,0 +1,8 @@
+namespace FlatBuf.FlatBuf.SmallObjects.SmallObjects;
+
+table Message {
+	message:string;
+	version:int;
+}
+
+root_type Message;

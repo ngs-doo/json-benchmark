@@ -13,7 +13,8 @@ public class Main {
 	enum BenchTarget {
 		DslJavaFull, DslJavaMinimal, Jackson, JacksonAfterburner,
 		Boon, Gson, Genson, Alibaba, Flexjson,
-		Kryo, FST
+		Kryo, FST,
+		FlatBuf
 	}
 
 	enum BenchSize {
@@ -34,7 +35,8 @@ public class Main {
 	}
 
 	public static void main(String[] args) throws Exception {
-		//args = new String[]{"Kryo", "Small", "Both", "10000000"};
+		//args = new String[]{"FlatBuf", "Small", "Both", "1000000"};
+		//args = new String[]{"DslJavaMinimal", "Small", "Both", "1000000"};
 		if (args.length != 4) {
 			System.out.printf(
 					"Expected usage: java -jar json-benchamrk.jar (%s) (%s) (%s) n",
@@ -95,6 +97,8 @@ public class Main {
 			serializer = SetupLibraries.setupKryo();
 		} else if (target == BenchTarget.FST) {
 			serializer = SetupLibraries.setupFst();
+		} else if (target == BenchTarget.FlatBuf) {
+			serializer = SetupLibraries.setupFlatBuf();
 		} else if (target == BenchTarget.DslJavaFull) {
 			serializer = SetupLibraries.setupDslClient(false);
 		} else if (target == BenchTarget.DslJavaMinimal) {
@@ -144,7 +148,7 @@ public class Main {
 		System.out.println("size = -1");
 		System.out.println("invalid deserialization = -1");
 		System.out.println("error");
-		System.out.println(ex.fillInStackTrace());
+		ex.printStackTrace(System.out);
 		System.exit(-42);
 	}
 

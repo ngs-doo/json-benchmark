@@ -1,0 +1,9 @@
+namespace FlatBuf.FlatBuf.SmallObjects.SmallObjects;
+
+table Complex {
+	x:string;//decimal;
+	y:float;
+	z:long;
+}
+
+root_type Complex;
