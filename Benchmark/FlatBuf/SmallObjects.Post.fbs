@@ -1,4 +1,4 @@
-namespace FlatBuf.FlatBuf.SmallObjects.SmallObjects;
+namespace FlatBuf.SmallObjects;
 
 table Post {
 	ID:string;//guid;

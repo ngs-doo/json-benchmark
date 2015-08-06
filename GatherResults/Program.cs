@@ -11,6 +11,7 @@ namespace GatherResults
 	{
 		private static string BenchPath = "../../../app";
 		private static string JavaPath = Environment.GetEnvironmentVariable("JAVA_HOME");
+		private static string RunOnly = null;
 
 		static void Main(string[] args)
 		{
@@ -24,6 +25,7 @@ namespace GatherResults
 				return;
 			}
 			if (args.Length > 0) BenchPath = args[0];
+			if (args.Length == 3) RunOnly = args[2];
 			bool exeExists = File.Exists(Path.Combine(BenchPath, "JsonBenchmark.exe"));
 			bool jarExists = File.Exists(Path.Combine(BenchPath, "json-benchmark.jar"));
 			if (!exeExists && !jarExists)
@@ -69,7 +71,8 @@ namespace GatherResults
 			RunSinglePass("Warmup JVM", false, "DslJavaMinimal", "Large", null, 1);
 			var large100 = RunLarge(repeat, 100);
 			var large1k = RunLarge(repeat, 1000);
-			File.Copy("template.xlsx", "results.xlsx", true);
+			var outputExcel = RunOnly == null ? "results.xlsx" : RunOnly + ".xlsx";
+			File.Copy("template.xlsx", outputExcel, true);
 			var vm = new ViewModel[]
 			{
 				ViewModel.Create("Startup times: SmallObject.Message",small1, t => t.Message),
@@ -93,10 +96,10 @@ namespace GatherResults
 				new ViewModel("1.000 LargeObjects.Book", large1k),
 			};
 			var json = JsonConvert.SerializeObject(vm);
-			File.WriteAllText("results.json", json);
-			using (var doc = NGS.Templater.Configuration.Factory.Open("results.xlsx"))
+			File.WriteAllText(RunOnly == null ? "results.json" : RunOnly + ".json", json);
+			using (var doc = NGS.Templater.Configuration.Factory.Open(outputExcel))
 				doc.Process(vm);
-			Process.Start("results.xlsx");
+			Process.Start(outputExcel);
 		}
 
 		class SmallTest
@@ -232,6 +235,14 @@ namespace GatherResults
 
 		static List<Stats> RunSinglePass(string description, bool exe, string serializer, string type, bool? both, int count)
 		{
+			var result = new List<Stats>();
+			if (RunOnly != null && RunOnly != serializer)
+			{
+				result.Add(new Stats { Duration = null, Size = null });
+				result.Add(new Stats { Duration = null, Size = null });
+				result.Add(new Stats { Duration = null, Size = null });
+				return result;
+			}
 			var processName = exe ? Path.Combine(BenchPath, "JsonBenchmark.exe") : Path.Combine(JavaPath ?? ".", "bin", "java");
 			var jarArg = exe ? string.Empty : "-jar \"" + Path.Combine(BenchPath, "json-benchmark.jar") + "\" ";
 			var what = both == null ? " None " : both == true ? " Both " : " Serialization ";
@@ -242,7 +253,6 @@ namespace GatherResults
 				RedirectStandardError = true,
 				CreateNoWindow = true
 			};
-			var result = new List<Stats>();
 			var process = Process.Start(info);
 			process.WaitForExit(5000 + count * 500);
 			if (both != null) Thread.Sleep(200);//let's wait for cleanup if required
