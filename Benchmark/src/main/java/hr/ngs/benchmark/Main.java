@@ -1,9 +1,11 @@
 package hr.ngs.benchmark;
 
+import hr.ngs.benchmark.serializers.*;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.LocalDate;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.*;
@@ -34,9 +36,17 @@ public class Main {
 		return sb.toString();
 	}
 
+	static class ByteStream extends ByteArrayOutputStream {
+		public byte[] getBytes() {
+			return this.buf;
+		}
+	}
+
 	public static void main(String[] args) throws Exception {
-		//args = new String[]{"FlatBuf", "Small", "Both", "1000000"};
-		//args = new String[]{"DslJavaMinimal", "Small", "Both", "1000000"};
+		//args = new String[]{"FlatBuf", "Small", "Both", "10000000"};
+		//args = new String[]{"Kryo", "Small", "Both", "10000000"};
+		//args = new String[]{"FST", "Small", "Both", "10000000"};
+		//args = new String[]{"DslJavaMinimal", "Small", "Both", "10000000"};
 		if (args.length != 4) {
 			System.out.printf(
 					"Expected usage: java -jar json-benchamrk.jar (%s) (%s) (%s) n",
@@ -80,29 +90,29 @@ public class Main {
 		}
 		Serializer serializer;
 		if (target == BenchTarget.Jackson) {
-			serializer = SetupLibraries.setupJackson();
+			serializer = new JacksonSerializer(false);
 		} else if (target == BenchTarget.JacksonAfterburner) {
-			serializer = SetupLibraries.setupJacksonAfterburner();
+			serializer = new JacksonSerializer(true);
 		} else if (target == BenchTarget.Alibaba) {
-			serializer = SetupLibraries.setupAlibaba();
+			serializer = new AlibabaSerializer();
 		} else if (target == BenchTarget.Boon) {
-			serializer = SetupLibraries.setupBoon();
+			serializer = new BoonSerializer();
 		} else if (target == BenchTarget.Flexjson) {
-			serializer = SetupLibraries.setupFlexjson();
+			serializer = new FlatBufSerializer();
 		} else if (target == BenchTarget.Gson) {
-			serializer = SetupLibraries.setupGson();
+			serializer = new GsonSerializer();
 		} else if (target == BenchTarget.Genson) {
-			serializer = SetupLibraries.setupGenson();
+			serializer = new GensonSerializer();
 		} else if (target == BenchTarget.Kryo) {
-			serializer = SetupLibraries.setupKryo();
+			serializer = new KryoSerializer();
 		} else if (target == BenchTarget.FST) {
-			serializer = SetupLibraries.setupFst();
+			serializer = new FstSerializer();
 		} else if (target == BenchTarget.FlatBuf) {
-			serializer = SetupLibraries.setupFlatBuf();
+			serializer = new FlatBufSerializer();
 		} else if (target == BenchTarget.DslJavaFull) {
-			serializer = SetupLibraries.setupDslClient(false);
+			serializer = new DslJsonSerializer(false);
 		} else if (target == BenchTarget.DslJavaMinimal) {
-			serializer = SetupLibraries.setupDslClient(true);
+			serializer = new DslJsonSerializer(true);
 		} else {
 			System.out.println("Unmapped target ;(");
 			System.exit(-99);
@@ -154,7 +164,7 @@ public class Main {
 
 	static void testSmall(int repeat, Serializer serializer, BenchType type) throws IOException {
 		int incorrect = 0;
-		Bytes result;
+		ByteStream stream = new ByteStream();
 		long start = System.nanoTime();
 		long size = 0;
 		for (int i = 0; i < repeat; i++) {
@@ -162,10 +172,11 @@ public class Main {
 			message.setMessage("some message " + i);
 			message.setVersion(i);
 			if (type == BenchType.None) continue;
-			result = serializer.serialize(message);
-			size += result.length;
+			stream.reset();
+			serializer.serialize(message, stream);
+			size += stream.size();
 			if (type == BenchType.Both || type == BenchType.Check) {
-				hr.ngs.benchmark.SmallObjects.Message deser = serializer.deserialize(hr.ngs.benchmark.SmallObjects.Message.class, result);
+				hr.ngs.benchmark.SmallObjects.Message deser = serializer.deserialize(hr.ngs.benchmark.SmallObjects.Message.class, stream.getBytes(), stream.size());
 				if (type == BenchType.Check && !message.equals(deser)) {
 					incorrect++;
 					//throw new IOException("not equal");
@@ -180,10 +191,11 @@ public class Main {
 			hr.ngs.benchmark.SmallObjects.Complex complex = new hr.ngs.benchmark.SmallObjects.Complex();
 			complex.setX(BigDecimal.valueOf(i / 1000d)).setY(-i / 1000f).setZ(i);
 			if (type == BenchType.None) continue;
-			result = serializer.serialize(complex);
-			size += result.length;
+			stream.reset();
+			serializer.serialize(complex, stream);
+			size += stream.size();
 			if (type == BenchType.Both || type == BenchType.Check) {
-				hr.ngs.benchmark.SmallObjects.Complex deser = serializer.deserialize(hr.ngs.benchmark.SmallObjects.Complex.class, result);
+				hr.ngs.benchmark.SmallObjects.Complex deser = serializer.deserialize(hr.ngs.benchmark.SmallObjects.Complex.class, stream.getBytes(), stream.size());
 				if (type == BenchType.Check && !deser.equals(complex)) {
 					incorrect++;
 					//throw new SerializationException("not equal");
@@ -203,10 +215,11 @@ public class Main {
 			post.setActive(i % 2 == 0);
 			post.setCreated(now.plusMinutes(i).toLocalDate());
 			if (type == BenchType.None) continue;
-			result = serializer.serialize(post);
-			size += result.length;
+			stream.reset();
+			serializer.serialize(post, stream);
+			size += stream.size();
 			if (type == BenchType.Both || type == BenchType.Check) {
-				hr.ngs.benchmark.SmallObjects.Post deser = serializer.deserialize(hr.ngs.benchmark.SmallObjects.Post.class, result);
+				hr.ngs.benchmark.SmallObjects.Post deser = serializer.deserialize(hr.ngs.benchmark.SmallObjects.Post.class, stream.getBytes(), stream.size());
 				if (type == BenchType.Check && !deser.equals(post)) {
 					incorrect++;
 					//throw new SerializationException("not equal");
@@ -218,6 +231,7 @@ public class Main {
 
 	static void testStandard(int repeat, Serializer serializer, BenchType type) throws IOException {
 		int incorrect = 0;
+		ByteStream stream = new ByteStream();
 		DateTime now = new DateTime(new Date(), DateTimeZone.UTC);
 		LocalDate today = LocalDate.now();
 		UUID[] uuids = new UUID[100];
@@ -227,7 +241,6 @@ public class Main {
 		String[][] tags = new String[][]{new String[0], new String[]{"JSON"}, new String[]{".NET", "Java", "benchmark"}};
 		long size = 0;
 		hr.ngs.benchmark.StandardObjects.PostState[] states = hr.ngs.benchmark.StandardObjects.PostState.values();
-		Bytes result;
 		long start = System.nanoTime();
 		for (int i = 0; i < repeat; i++) {
 			hr.ngs.benchmark.StandardObjects.DeletePost delete = new hr.ngs.benchmark.StandardObjects.DeletePost();
@@ -249,10 +262,11 @@ public class Main {
 				}
 			}
 			if (type == BenchType.None) continue;
-			result = serializer.serialize(delete);
-			size += result.length;
+			stream.reset();
+			serializer.serialize(delete, stream);
+			size += stream.size();
 			if (type == BenchType.Both || type == BenchType.Check) {
-				hr.ngs.benchmark.StandardObjects.DeletePost deser = serializer.deserialize(hr.ngs.benchmark.StandardObjects.DeletePost.class, result);
+				hr.ngs.benchmark.StandardObjects.DeletePost deser = serializer.deserialize(hr.ngs.benchmark.StandardObjects.DeletePost.class, stream.getBytes(), stream.size());
 				if (type == BenchType.Check && !delete.equals(deser)) {
 					incorrect++;
 					//throw new SerializationException("not equal");
@@ -286,10 +300,11 @@ public class Main {
 				post.getComments().add(comment);
 			}
 			if (type == BenchType.None) continue;
-			result = serializer.serialize(post);
-			size += result.length;
+			stream.reset();
+			serializer.serialize(post, stream);
+			size += stream.size();
 			if (type == BenchType.Both || type == BenchType.Check) {
-				hr.ngs.benchmark.StandardObjects.Post deser = serializer.deserialize(hr.ngs.benchmark.StandardObjects.Post.class, result);
+				hr.ngs.benchmark.StandardObjects.Post deser = serializer.deserialize(hr.ngs.benchmark.StandardObjects.Post.class, stream.getBytes(), stream.size());
 				if (type == BenchType.Check && !post.equals(deser)) {
 					incorrect++;
 					//throw new SerializationException("not equal");
@@ -304,7 +319,7 @@ public class Main {
 		DateTime now = new DateTime(new Date(), DateTimeZone.UTC);
 		long size = 0;
 		hr.ngs.benchmark.LargeObjects.Genre[] genresEnum = hr.ngs.benchmark.LargeObjects.Genre.values();
-		Bytes result;
+		ByteStream stream = new ByteStream();
 		ArrayList<byte[]> illustrations = new ArrayList<byte[]>();
 		Random rnd = new Random(1);
 		for (int i = 0; i < 10; i++) {
@@ -355,10 +370,11 @@ public class Main {
 				book.getPages().addLast(page);
 			}
 			if (type == BenchType.None) continue;
-			result = serializer.serialize(book);
-			size += result.length;
+			stream.reset();
+			serializer.serialize(book, stream);
+			size += stream.size();
 			if (type == BenchType.Both || type == BenchType.Check) {
-				hr.ngs.benchmark.LargeObjects.Book deser = serializer.deserialize(hr.ngs.benchmark.LargeObjects.Book.class, result);
+				hr.ngs.benchmark.LargeObjects.Book deser = serializer.deserialize(hr.ngs.benchmark.LargeObjects.Book.class, stream.getBytes(), stream.size());
 				if (type == BenchType.Check && !book.equals(deser)) {
 					incorrect++;
 					//throw new SerializationException("not equal");

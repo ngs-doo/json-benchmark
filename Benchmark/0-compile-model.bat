@@ -1,6 +1,6 @@
 @echo off
 cd "%~dp0"
 
-java -jar dsl-clc.jar -java_client=lib\generated-model.jar -dependencies:java_client=dependencies\java_client -dsl=. -namespace=hr.ngs.benchmark -manual-json -jackson -compiler
+java -jar dsl-clc.jar java_client=lib\generated-model.jar dependencies:java_client=dependencies\java_client dsl=. namespace=hr.ngs.benchmark manual-json jackson compiler=dsl-compiler.exe joda-time
 
-call mvn deploy:deploy-file -Durl=file://lib -Dfile=lib/generated-model.jar -DgroupId=hr.ngs.benchmark -DartifactId=generated-model -Dpackaging=jar -Dversion=1.2
+call mvn deploy:deploy-file -Durl=file://lib -Dfile=lib/generated-model.jar -DgroupId=hr.ngs.benchmark -DartifactId=generated-model -Dpackaging=jar -Dversion=1.3

@@ -1,8 +1,10 @@
 package hr.ngs.benchmark;
 
 import java.io.IOException;
+import java.io.OutputStream;
 
-interface Serializer {
-	Bytes serialize(com.dslplatform.client.json.JsonObject arg) throws IOException;
-	<T> T deserialize(Class<T> manifest, Bytes input) throws IOException;
+public interface Serializer {
+	void serialize(com.dslplatform.json.JsonObject arg, OutputStream stream) throws IOException;
+
+	<T> T deserialize(Class<T> manifest, byte[] bytes, int len) throws IOException;
 }
