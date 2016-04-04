@@ -3,12 +3,14 @@
   <groupId>hr.ngs.benchmark</groupId>
   <artifactId>generated-model</artifactId>
   <versioning>
+    <release>1.4</release>
     <versions>
       <version>1.0.0-SNAPSHOT</version>
       <version>1.1</version>
       <version>1.2</version>
       <version>1.3</version>
+      <version>1.4</version>
     </versions>
-    <lastUpdated>20151208060959</lastUpdated>
+    <lastUpdated>20160403202342</lastUpdated>
   </versioning>
 </metadata>

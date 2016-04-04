@@ -12,22 +12,22 @@ import java.util.*;
 
 public class Main {
 
-	enum BenchTarget {
-		DslJavaFull, DslJavaMinimal, Jackson, JacksonAfterburner,
+	private enum BenchTarget {
+		DslJsonFull, DslJsonMinimal, Jackson, JacksonAfterburner,
 		Boon, Gson, Genson, Alibaba, Flexjson,
 		Kryo, FST,
 		FlatBuf
 	}
 
-	enum BenchSize {
+	private enum BenchSize {
 		Small, Standard, Large
 	}
 
-	enum BenchType {
+	private enum BenchType {
 		Serialization, Both, None, Check
 	}
 
-	static <T extends Enum> String EnumTypes(T[] enums) {
+	private static <T extends Enum> String EnumTypes(T[] enums) {
 		StringBuilder sb = new StringBuilder();
 		sb.append(enums[0].name());
 		for (int i = 1; i < enums.length; i++) {
@@ -36,17 +36,14 @@ public class Main {
 		return sb.toString();
 	}
 
-	static class ByteStream extends ByteArrayOutputStream {
+	private static class ByteStream extends ByteArrayOutputStream {
 		public byte[] getBytes() {
 			return this.buf;
 		}
 	}
 
 	public static void main(String[] args) throws Exception {
-		//args = new String[]{"FlatBuf", "Small", "Both", "10000000"};
 		//args = new String[]{"Kryo", "Small", "Both", "10000000"};
-		//args = new String[]{"FST", "Small", "Both", "10000000"};
-		//args = new String[]{"DslJavaMinimal", "Small", "Both", "10000000"};
 		if (args.length != 4) {
 			System.out.printf(
 					"Expected usage: java -jar json-benchamrk.jar (%s) (%s) (%s) n",
@@ -98,7 +95,7 @@ public class Main {
 		} else if (target == BenchTarget.Boon) {
 			serializer = new BoonSerializer();
 		} else if (target == BenchTarget.Flexjson) {
-			serializer = new FlatBufSerializer();
+			serializer = new FlexJsonSerializer();
 		} else if (target == BenchTarget.Gson) {
 			serializer = new GsonSerializer();
 		} else if (target == BenchTarget.Genson) {
@@ -109,37 +106,29 @@ public class Main {
 			serializer = new FstSerializer();
 		} else if (target == BenchTarget.FlatBuf) {
 			serializer = new FlatBufSerializer();
-		} else if (target == BenchTarget.DslJavaFull) {
+		} else if (target == BenchTarget.DslJsonFull) {
 			serializer = new DslJsonSerializer(false);
-		} else if (target == BenchTarget.DslJavaMinimal) {
+		} else if (target == BenchTarget.DslJsonMinimal) {
 			serializer = new DslJsonSerializer(true);
 		} else {
 			System.out.println("Unmapped target ;(");
 			System.exit(-99);
 			return;
 		}
-		if (size == BenchSize.Small) {
-			try {
+		try {
+			if (size == BenchSize.Small) {
 				testSmall(repeat, serializer, type);
-			} catch (Exception ex) {
-				reportError(ex);
-			}
-		} else if (size == BenchSize.Standard) {
-			try {
+			} else if (size == BenchSize.Standard) {
 				testStandard(repeat, serializer, type);
-			} catch (Exception ex) {
-				reportError(ex);
-			}
-		} else {
-			try {
+			} else {
 				testLarge(repeat, serializer, type);
-			} catch (Exception ex) {
-				reportError(ex);
 			}
+		} catch (Exception ex) {
+			reportError(ex);
 		}
 	}
 
-	static void reportStats(long start, long result, int incorrect) {
+	private static void reportStats(long start, long result, int incorrect) {
 		long stop = System.nanoTime();
 		long timediff = (stop - start) / 1000000;
 		System.out.println("duration = " + timediff);
@@ -147,7 +136,7 @@ public class Main {
 		System.out.println("invalid deserialization = " + incorrect);
 	}
 
-	static void reportError(Exception ex) {
+	private static void reportError(Exception ex) {
 		System.out.println("duration = -1");
 		System.out.println("size = -1");
 		System.out.println("invalid deserialization = -1");
@@ -158,11 +147,12 @@ public class Main {
 		System.out.println("size = -1");
 		System.out.println("invalid deserialization = -1");
 		System.out.println("error");
-		ex.printStackTrace(System.out);
+		//ex.printStackTrace(); ///.NET Process.WaitForExit doesn't work with such stacktrace error
+		System.out.println(ex.getMessage());
 		System.exit(-42);
 	}
 
-	static void testSmall(int repeat, Serializer serializer, BenchType type) throws IOException {
+	private static void testSmall(int repeat, Serializer serializer, BenchType type) throws IOException {
 		int incorrect = 0;
 		ByteStream stream = new ByteStream();
 		long start = System.nanoTime();
@@ -229,7 +219,7 @@ public class Main {
 		reportStats(start, size, incorrect);
 	}
 
-	static void testStandard(int repeat, Serializer serializer, BenchType type) throws IOException {
+	private static void testStandard(int repeat, Serializer serializer, BenchType type) throws IOException {
 		int incorrect = 0;
 		ByteStream stream = new ByteStream();
 		DateTime now = new DateTime(new Date(), DateTimeZone.UTC);
@@ -314,7 +304,7 @@ public class Main {
 		reportStats(start, size, incorrect);
 	}
 
-	static void testLarge(int repeat, Serializer serializer, BenchType type) throws IOException {
+	private static void testLarge(int repeat, Serializer serializer, BenchType type) throws IOException {
 		int incorrect = 0;
 		DateTime now = new DateTime(new Date(), DateTimeZone.UTC);
 		long size = 0;

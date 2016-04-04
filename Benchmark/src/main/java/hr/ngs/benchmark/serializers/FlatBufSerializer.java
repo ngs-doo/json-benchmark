@@ -12,7 +12,7 @@ import java.nio.ByteBuffer;
 import java.util.UUID;
 
 public class FlatBufSerializer implements Serializer {
-	final FlatBufferBuilder fbb = new FlatBufferBuilder();
+	private final FlatBufferBuilder fbb = new FlatBufferBuilder();
 
 	@Override
 	public void serialize(JsonObject arg, OutputStream os) throws IOException {

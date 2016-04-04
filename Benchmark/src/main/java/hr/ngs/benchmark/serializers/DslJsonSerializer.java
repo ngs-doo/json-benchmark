@@ -9,9 +9,9 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 public class DslJsonSerializer implements Serializer {
-	final DslJson<Object> json = new DslJson<Object>();
-	final JsonWriter sw = new JsonWriter();
-	final boolean minimal;
+	private final DslJson<Object> json = new DslJson<Object>();
+	private final JsonWriter sw = new JsonWriter();
+	private final boolean minimal;
 
 	public DslJsonSerializer(boolean minimal) {
 		this.minimal = minimal;

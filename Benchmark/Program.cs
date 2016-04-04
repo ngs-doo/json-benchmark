@@ -92,13 +92,13 @@ namespace JsonBenchmark
 					LibrarySetup.SetupNetJSON(out serialize, out deserialize);
 					break;
 				case BenchTarget.ProtoBuf:
-					LibrarySetup.SetupRevenj(out serialize, out deserialize, "application/x-protobuf");
+					LibrarySetup.SetupProtobuf(out serialize, out deserialize);
 					break;
 				case BenchTarget.RevenjJsonFull:
-					LibrarySetup.SetupRevenj(out serialize, out deserialize, "application/json");
+					LibrarySetup.SetupRevenj(out serialize, out deserialize, false);
 					break;
 				case BenchTarget.RevenjJsonMinimal:
-					LibrarySetup.SetupRevenj(out serialize, out deserialize, "application/json;minimal");
+					LibrarySetup.SetupRevenj(out serialize, out deserialize, true);
 					break;
 				default:
 					Console.WriteLine("Unwired bench type: " + type);
@@ -223,9 +223,9 @@ namespace JsonBenchmark
 					}
 					break;
 			}
-			Console.WriteLine("GC0: " + (GC.CollectionCount(0) - gc0));
-			Console.WriteLine("GC1: " + (GC.CollectionCount(1) - gc1));
-			Console.WriteLine("GC2: " + (GC.CollectionCount(2) - gc2));
+			//Console.WriteLine("GC0: " + (GC.CollectionCount(0) - gc0));
+			//Console.WriteLine("GC1: " + (GC.CollectionCount(1) - gc1));
+			//Console.WriteLine("GC2: " + (GC.CollectionCount(2) - gc2));
 			return 0;
 		}
 

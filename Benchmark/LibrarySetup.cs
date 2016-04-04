@@ -1,6 +1,6 @@
 ﻿using Bond.IO.Unsafe;
 using Bond.Protocols;
-using Revenj.Extensibility;
+using ProtoBuf.Meta;
 using Revenj.Serialization;
 using Revenj.Utility;
 using System;
@@ -13,16 +13,28 @@ namespace JsonBenchmark
 {
 	internal static class LibrarySetup
 	{
+		class RevenjBinder : SerializationBinder
+		{
+			public override Type BindToType(string assemblyName, string typeName)
+			{
+				return null;
+			}
+
+			public override void BindToName(Type serializedType, out string assemblyName, out string typeName)
+			{
+				assemblyName = null;
+				typeName = serializedType.FullName;
+			}
+		}
 
 		public static void SetupRevenj(
 			out Action<object, ChunkedMemoryStream> serialize,
 			out Func<ChunkedMemoryStream, Type, object> deserialize,
-			string contentType)
+			bool minimal)
 		{
-			var binder = new GenericDeserializationBinder(new Lazy<ITypeResolver>(() => null));
-			IWireSerialization serialization = new WireSerialization(binder);
-			serialize = (obj, stream) => serialization.Serialize(obj, contentType, stream);
-			deserialize = (stream, type) => serialization.Deserialize(stream, type, contentType, default(StreamingContext));
+			JsonSerialization serialization = new JsonSerialization(new RevenjBinder());
+			serialize = (obj, stream) => serialization.Serialize(obj, stream, minimal);
+			deserialize = (stream, type) => serialization.Deserialize(stream, type, default(StreamingContext));
 		}
 
 		public static void SetupNewtonsoftJson(
@@ -39,6 +51,16 @@ namespace JsonBenchmark
 				sw.Flush();
 			};
 			deserialize = (stream, type) => serializer.Deserialize(new Newtonsoft.Json.JsonTextReader(stream.GetReader()), type);
+		}
+
+		public static void SetupProtobuf(
+			out Action<object, ChunkedMemoryStream> serialize,
+			out Func<ChunkedMemoryStream, Type, object> deserialize)
+		{
+			var model = RuntimeTypeModel.Create();
+			model.InferTagFromNameDefault = true;
+			serialize = (obj, stream) => model.Serialize(stream, obj);
+			deserialize = (stream, type) => model.Deserialize(stream, null, type);
 		}
 
 		public static void SetupJil(

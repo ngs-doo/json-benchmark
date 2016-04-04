@@ -2,11 +2,11 @@ package hr.ngs.benchmark.serializers;
 
 import com.dslplatform.json.JsonObject;
 import hr.ngs.benchmark.Serializer;
-import org.boon.json.JsonFactory;
-import org.boon.json.JsonSerializerFactory;
-import org.boon.json.serializers.CustomObjectSerializer;
-import org.boon.json.serializers.JsonSerializerInternal;
-import org.boon.primitive.CharBuf;
+import io.advantageous.boon.json.JsonFactory;
+import io.advantageous.boon.json.JsonSerializerFactory;
+import io.advantageous.boon.json.serializers.CustomObjectSerializer;
+import io.advantageous.boon.json.serializers.JsonSerializerInternal;
+import io.advantageous.boon.primitive.CharBuf;
 import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 
@@ -18,7 +18,7 @@ import java.nio.charset.Charset;
 public class BoonSerializer implements Serializer {
 	private final static Charset UTF8 = Charset.forName("UTF-8");
 
-	static class BoonLocalDateSerializer implements CustomObjectSerializer {
+	private static class BoonLocalDateSerializer implements CustomObjectSerializer {
 		@Override
 		public Class type() {
 			return LocalDate.class;
@@ -30,7 +30,7 @@ public class BoonSerializer implements Serializer {
 		}
 	}
 
-	static class BoonDateTimeSerializer implements CustomObjectSerializer {
+	private static class BoonDateTimeSerializer implements CustomObjectSerializer {
 		@Override
 		public Class type() {
 			return DateTime.class;
@@ -42,12 +42,12 @@ public class BoonSerializer implements Serializer {
 		}
 	}
 
-	final org.boon.json.JsonSerializer serializer = new JsonSerializerFactory()
+	private final io.advantageous.boon.json.JsonSerializer serializer = new JsonSerializerFactory()
 			.addTypeSerializer(LocalDate.class, new BoonLocalDateSerializer())
 			.addTypeSerializer(DateTime.class, new BoonDateTimeSerializer())
 			.create();
-	final org.boon.json.ObjectMapper mapper = JsonFactory.create();
-	final CharBuf cb = CharBuf.createCharBuf();
+	private final io.advantageous.boon.json.ObjectMapper mapper = JsonFactory.create();
+	private final CharBuf cb = CharBuf.createCharBuf();
 
 	@Override
 	public void serialize(JsonObject arg, OutputStream os) throws IOException {

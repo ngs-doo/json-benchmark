@@ -42,7 +42,7 @@ namespace GatherResults
 				}
 				BenchPath = ".";
 			}
-			var java = Path.Combine(JavaPath ?? ".", "bin", "java");
+			var java = JavaPath != null ? Path.Combine(JavaPath, "bin", "java") : "java";
 			var process =
 				Process.Start(
 					new ProcessStartInfo
@@ -54,21 +54,22 @@ namespace GatherResults
 					});
 			var javaVersion = process.StandardOutput.ReadToEnd();
 			Console.WriteLine(javaVersion);
+			Console.WriteLine(".NET: " + Environment.Version);
 			int repeat = args.Length > 1 ? int.Parse(args[1]) : 2;
 			RunSinglePass("Warmup .NET", true, "RevenjJsonMinimal", "Small", null, 1);
-			RunSinglePass("Warmup JVM", false, "DslJavaMinimal", "Small", null, 1);
+			RunSinglePass("Warmup JVM", false, "DslJsonMinimal", "Small", null, 1);
 			var small1 = RunSmall(repeat, 1);
 			var std1 = RunStandard(repeat, 1);
 			var small100k = RunSmall(repeat, 100000);
 			var small1m = RunSmall(repeat, 1000000);
 			var small10m = RunSmall(repeat, 10000000);
 			RunSinglePass("Warmup .NET", true, "RevenjJsonMinimal", "Standard", null, 1);
-			RunSinglePass("Warmup JVM", false, "DslJavaMinimal", "Standard", null, 1);
+			RunSinglePass("Warmup JVM", false, "DslJsonMinimal", "Standard", null, 1);
 			var std10k = RunStandard(repeat, 10000);
 			var std100k = RunStandard(repeat, 100000);
 			var std1m = RunStandard(repeat, 1000000);
 			RunSinglePass("Warmup .NET", true, "RevenjJsonMinimal", "Large", null, 1);
-			RunSinglePass("Warmup JVM", false, "DslJavaMinimal", "Large", null, 1);
+			RunSinglePass("Warmup JVM", false, "DslJsonMinimal", "Large", null, 1);
 			var large100 = RunLarge(repeat, 100);
 			var large1k = RunLarge(repeat, 1000);
 			var outputExcel = RunOnly == null ? "results.xlsx" : RunOnly + ".xlsx";
@@ -209,10 +210,10 @@ namespace GatherResults
 			var SS = type != "Large" ? RunSinglePass("Service Stack", true, "ServiceStack", type, both, count) : EmptyStats;
 			var JIL = type == "Small" ? RunSinglePass("Jil", true, "Jil", type, both, count) : EmptyStats;
 			var NN = type == "Small" ? RunSinglePass("NetJSON", true, "NetJSON", type, both, count) : EmptyStats;
-			var NF = type == "Small" ? RunSinglePass("fastJSON", true, "fastJSON", type, both, count) : EmptyStats;
+			var PB = RunSinglePass("ProtoBuf", true, "ProtoBuf", type, both, count);
 			var JJ = RunSinglePass("Jackson", false, "JacksonAfterburner", type, both, count);
-			var JD = RunSinglePass("DSL Platform Java", false, "DslJavaMinimal", type, both, count);
-			var JS = type != "Large" ? RunSinglePass("Genson", false, "Genson", type, both, count) : EmptyStats;
+			var JD = RunSinglePass("DSL-JSON", false, "DslJsonMinimal", type, both, count);
+			var KR = RunSinglePass("Kryo", false, "Kryo", type, both, count);
 			var JG = type != "Large" ? RunSinglePass("Gson", false, "Gson", type, both, count) : EmptyStats;
 			var JB = type == "Small" ? RunSinglePass("Boon", false, "Boon", type, both, count) : EmptyStats;
 			var JA = type == "Small" ? RunSinglePass("Alibaba", false, "Alibaba", type, both, count) : EmptyStats;
@@ -223,10 +224,10 @@ namespace GatherResults
 				ServiceStack = SS,
 				Jil = JIL,
 				NetJSON = NN,
-				fastJSON = NF,
+				Protobuf = PB,
 				Jackson = JJ,
-				DslJava = JD,
-				Genson = JS,
+				DslJson = JD,
+				Kryo = KR,
 				Gson = JG,
 				Alibaba = JA,
 				Boon = JB
@@ -305,11 +306,11 @@ namespace GatherResults
 		public List<Stats> Revenj;
 		public List<Stats> Jil;
 		public List<Stats> NetJSON;
-		public List<Stats> fastJSON;
+		public List<Stats> Protobuf;
 		public List<Stats> ServiceStack;
 		public List<Stats> Jackson;
-		public List<Stats> DslJava;
-		public List<Stats> Genson;
+		public List<Stats> DslJson;
+		public List<Stats> Kryo;
 		public List<Stats> Gson;
 		public List<Stats> Alibaba;
 		public List<Stats> Boon;
@@ -322,11 +323,11 @@ namespace GatherResults
 				Revenj = Revenj[index],
 				ServiceStack = ServiceStack[index],
 				Jil = Jil[index],
-				fastJSON = fastJSON[index],
+				Protobuf = Protobuf[index],
 				NetJSON = NetJSON[index],
 				Jackson = Jackson[index],
-				DslJava = DslJava[index],
-				Genson = Genson[index],
+				DslJson = DslJson[index],
+				Kryo = Kryo[index],
 				Gson = Gson[index],
 				Alibaba = Alibaba[index],
 				Boon = Boon[index],
@@ -339,12 +340,12 @@ namespace GatherResults
 		public Stats Newtonsoft;
 		public Stats Revenj;
 		public Stats Jil;
-		public Stats fastJSON;
+		public Stats Protobuf;
 		public Stats ServiceStack;
 		public Stats NetJSON;
 		public Stats Jackson;
-		public Stats DslJava;
-		public Stats Genson;
+		public Stats DslJson;
+		public Stats Kryo;
 		public Stats Gson;
 		public Stats Alibaba;
 		public Stats Boon;

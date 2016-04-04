@@ -5,7 +5,7 @@
 		timestamp lastModified {
 			//otherwise we will get current timestamp
 			default c# 'System.DateTime.MinValue';
-			default Java 'com.dslplatform.client.Utils.MIN_DATE_TIME'; 
+			default Java 'com.dslplatform.json.JodaTimeConverter.MIN_DATE_TIME';
 		}
 		long deletedBy;
 		string? reason;
@@ -25,7 +25,7 @@
 		date created {
 			//otherwise we will get current date
 			default c# 'System.DateTime.MinValue';
-			default Java 'com.dslplatform.client.Utils.MIN_LOCAL_DATE'; 
+			default Java 'com.dslplatform.json.JodaTimeConverter.MIN_LOCAL_DATE';
 		}
 		Set<string> tags;
 		timestamp? approved;
@@ -38,7 +38,7 @@
 		date created {
 			//otherwise we will get current date
 			default c# 'System.DateTime.MinValue';
-			default Java 'com.dslplatform.client.Utils.MIN_LOCAL_DATE'; 
+			default Java 'com.dslplatform.json.JodaTimeConverter.MIN_LOCAL_DATE';
 		}
 		timestamp? approved;
 		string? user;

@@ -14,10 +14,10 @@ import java.io.OutputStream;
 import java.util.UUID;
 
 public class KryoSerializer implements Serializer {
-	final com.esotericsoftware.kryo.Kryo kryo = new com.esotericsoftware.kryo.Kryo();
-	final byte[] buffer = new byte[8192];
-	final com.esotericsoftware.kryo.io.Output kryoOutput = new com.esotericsoftware.kryo.io.Output(buffer, -1);
-	final com.esotericsoftware.kryo.io.Input kryoInput = new com.esotericsoftware.kryo.io.Input(buffer);
+	private final com.esotericsoftware.kryo.Kryo kryo = new com.esotericsoftware.kryo.Kryo();
+	private final byte[] buffer = new byte[8192];
+	private final com.esotericsoftware.kryo.io.Output kryoOutput = new com.esotericsoftware.kryo.io.Output(buffer, -1);
+	private final com.esotericsoftware.kryo.io.Input kryoInput = new com.esotericsoftware.kryo.io.Input(buffer);
 
 	public KryoSerializer() {
 		kryo.setReferences(false);

@@ -10,16 +10,15 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 public class FstSerializer implements Serializer {
-	final FSTConfiguration conf;
-	final FSTObjectInput objectInput;
-	final FSTObjectOutput objectOutput;
+	private final FSTConfiguration conf;
+	private final FSTObjectInput objectInput;
+	private final FSTObjectOutput objectOutput;
 
 	public FstSerializer() {
 		conf = FSTConfiguration.createDefaultConfiguration();
 		conf.setShareReferences(false);
 		objectInput = new FSTObjectInput(conf);
 		objectOutput = new FSTObjectOutput(conf);
-
 	}
 
 	@Override

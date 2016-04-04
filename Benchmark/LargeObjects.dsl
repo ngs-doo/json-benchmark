@@ -26,7 +26,7 @@
 		timestamp createadAt { 
 			//otherwise we will get current date
 			default c# 'System.DateTime.MinValue';
-			default Java 'com.dslplatform.client.Utils.MIN_DATE_TIME'; 
+			default Java 'com.dslplatform.json.JodaTimeConverter.MIN_DATE_TIME';
 		}
 		long index;
 	}

@@ -16,7 +16,7 @@ import java.nio.charset.CharsetDecoder;
 public class AlibabaSerializer implements Serializer {
 	private final static Charset UTF8 = Charset.forName("UTF-8");
 
-	final CharsetDecoder utf8 = ThreadLocalCache.getUTF8Decoder();
+	private final CharsetDecoder utf8 = ThreadLocalCache.getUTF8Decoder();
 
 	@Override
 	public void serialize(JsonObject arg, OutputStream os) throws IOException {

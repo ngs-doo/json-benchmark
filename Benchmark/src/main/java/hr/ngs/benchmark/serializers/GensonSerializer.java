@@ -9,9 +9,14 @@ import hr.ngs.benchmark.Serializer;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.Charset;
 
 public class GensonSerializer implements Serializer {
-	final Genson genson = new GensonBuilder().withBundle(new JodaTimeBundle()).create();
+	private final Genson genson = new GensonBuilder()
+			.useDateAsTimestamp(false)
+			.withBundle(new JodaTimeBundle())
+			.create();
+	private final static Charset UTF8 = Charset.forName("UTF-8");
 
 	@Override
 	public void serialize(JsonObject arg, OutputStream os) throws IOException {
@@ -20,6 +25,6 @@ public class GensonSerializer implements Serializer {
 
 	@Override
 	public <T> T deserialize(Class<T> manifest, byte[] bytes, int length) throws IOException {
-		return genson.deserialize(new ByteArrayInputStream(bytes, 0, length), manifest);
+		return genson.deserialize(new String(bytes, 0, length, UTF8), manifest);
 	}
 }

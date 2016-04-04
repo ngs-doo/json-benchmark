@@ -1,20 +1,20 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.31101.0
+VisualStudioVersion = 12.0.40629.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JsonBenchmark", "JsonBenchmark.csproj", "{2F9C5E70-99D4-4365-A243-61075B19FB5C}"
 EndProject
 Global
 	GlobalSection(DslPlatformSolutionProperties) = preSolution
-		ConnectionString = server=localhost;database=Benchmark;user=revenj;password=revenj
-		PostgresMigration = False
-		ApplyMigration = False
-		SqlScriptsPath = ..\SQL
-		Server.Compile = True
-		Server.Target = ..\app
-		Server.WithManualJson = True
-		OfflineCompiler = dsl-compiler.exe
+		Postgres.ConnectionString = server=localhost
+		Php.Name = Php
+		Php.Target = Php
+		Postgres.Compile = True
+		Postgres.Name = ServerModel
+		Postgres.WithManualJson = True
+		Postgres.UseUtc = True
+		Postgres.MinimalSerialization = True
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

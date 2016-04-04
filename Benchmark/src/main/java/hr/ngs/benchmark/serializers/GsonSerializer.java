@@ -45,7 +45,7 @@ public class GsonSerializer implements Serializer {
 		}
 	}
 
-	final Gson gson;
+	private final Gson gson;
 
 	public GsonSerializer() {
 		GsonBuilder builder = new GsonBuilder();

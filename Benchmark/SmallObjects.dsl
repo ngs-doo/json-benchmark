@@ -7,14 +7,14 @@
 		guid ID { 
 			//otherwise we will get a new guid as default
 			default c# 'System.Guid.Empty';
-			default Java 'com.dslplatform.client.Utils.MIN_UUID'; 
+			default Java 'com.dslplatform.json.UUIDConverter.MIN_UUID';
 		}
 		string title;
 		bool active;
 		date created {
 			//otherwise we will get current date
 			default c# 'System.DateTime.MinValue';
-			default Java 'com.dslplatform.client.Utils.MIN_LOCAL_DATE'; 
+			default Java 'com.dslplatform.json.JodaTimeConverter.MIN_LOCAL_DATE';
 		}
 	}
 	value Complex {
