@@ -1,6 +1,6 @@
-﻿using Revenj.Utility;
-using System;
+﻿using System;
 using System.Diagnostics;
+using Revenj.Utility;
 
 namespace JsonBenchmark
 {
@@ -148,7 +148,7 @@ namespace JsonBenchmark
 						ReportStatsAndRestart(null, -1, repeat);
 						ReportStatsAndRestart(null, -1, repeat);
 						Console.WriteLine("error");
-						Console.WriteLine(ex.ToString());
+						Console.WriteLine(ex.Message);
 						return -41;
 					}
 					break;
@@ -191,7 +191,7 @@ namespace JsonBenchmark
 						ReportStatsAndRestart(null, -1, repeat);
 						ReportStatsAndRestart(null, -1, repeat);
 						Console.WriteLine("error");
-						Console.WriteLine(ex.ToString());
+						Console.WriteLine(ex.Message);
 						return -42;
 					}
 					break;
@@ -218,7 +218,7 @@ namespace JsonBenchmark
 					{
 						ReportStatsAndRestart(null, -1, repeat);
 						Console.WriteLine("error");
-						Console.WriteLine(ex.ToString());
+						Console.WriteLine(ex.Message);
 						return -43;
 					}
 					break;

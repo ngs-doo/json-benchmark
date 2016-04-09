@@ -37,7 +37,7 @@ namespace JsonBenchmark.Models.Large
 		[DataMember(Order = 4)]
 		public int authorId { get; set; }
 		[DataMember(Order = 5)]
-		LinkedList<Page> pages { get; set; }
+		public LinkedList<Page> pages { get; set; }
 		[DataMember(Order = 6)]
 		public DateTime? published { get; set; }
 		[DataMember(Order = 7)]

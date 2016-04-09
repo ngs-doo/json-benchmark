@@ -1,9 +1,9 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
-using Newtonsoft.Json;
 
 namespace GatherResults
 {
@@ -208,8 +208,8 @@ namespace GatherResults
 			var REV = RunSinglePass("Revenj", true, "RevenjJsonMinimal", type, both, count);
 			//TODO hacks since most libraries fail
 			var SS = type != "Large" ? RunSinglePass("Service Stack", true, "ServiceStack", type, both, count) : EmptyStats;
-			var JIL = type == "Small" ? RunSinglePass("Jil", true, "Jil", type, both, count) : EmptyStats;
-			var NN = type == "Small" ? RunSinglePass("NetJSON", true, "NetJSON", type, both, count) : EmptyStats;
+			var JIL = type != "Large" ? RunSinglePass("Jil", true, "Jil", type, both, count) : EmptyStats;
+			var NN = type != "Large" ? RunSinglePass("NetJSON", true, "NetJSON", type, both, count) : EmptyStats;
 			var PB = RunSinglePass("ProtoBuf", true, "ProtoBuf", type, both, count);
 			var JJ = RunSinglePass("Jackson", false, "JacksonAfterburner", type, both, count);
 			var JD = RunSinglePass("DSL-JSON", false, "DslJsonMinimal", type, both, count);

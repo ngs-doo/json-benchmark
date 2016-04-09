@@ -70,10 +70,10 @@ namespace JsonBenchmark
 			serialize = (obj, stream) =>
 			{
 				var sw = stream.GetWriter();
-				Jil.JSON.Serialize(obj, sw);
+				Jil.JSON.Serialize(obj, sw, Jil.Options.ISO8601);
 				sw.Flush();
 			};
-			deserialize = (stream, type) => Jil.JSON.Deserialize(stream.GetReader(), type);
+			deserialize = (stream, type) => Jil.JSON.Deserialize(stream.GetReader(), type, Jil.Options.ISO8601);
 		}
 
 		public static void SetupBondJson(
@@ -171,6 +171,7 @@ namespace JsonBenchmark
 		{
 			var serializers = new Dictionary<Type, Action<TextWriter, object>>();
 			var deserializers = new Dictionary<Type, Func<TextReader, object>>();
+			NetJSON.NetJSON.DateFormat = NetJSON.NetJSONDateFormat.ISO;
 			//TODO: not really nice... but let's avoid to string conversion
 			serializers[typeof(Models.Small.Message)] = (tw, obj) => NetJSON.NetJSON.Serialize<Models.Small.Message>((Models.Small.Message)obj, tw);
 			serializers[typeof(Models.Small.Complex)] = (tw, obj) => NetJSON.NetJSON.Serialize<Models.Small.Complex>((Models.Small.Complex)obj, tw);
