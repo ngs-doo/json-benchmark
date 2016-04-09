@@ -141,6 +141,7 @@ namespace JsonBenchmark.Models.Large
 		public Page()
 		{
 			notes = new List<Note>();
+			identity = Guid.NewGuid();
 		}
 		[DataMember]
 		public string text { get; set; }

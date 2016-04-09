@@ -4,7 +4,7 @@
   <groupId>hr.ngs</groupId>
   <artifactId>json-benchmark</artifactId>
   <packaging>jar</packaging>
-  <version>1.4</version>
+  <version>1.5</version>
   <name>JSON Benchmark</name>
   <url>http://maven.apache.org</url>
 
@@ -60,7 +60,7 @@
     <dependency>
       <groupId>hr.ngs.benchmark</groupId>
       <artifactId>generated-model</artifactId>
-      <version>1.4</version>
+      <version>1.5</version>
     </dependency>
       <dependency>
       <groupId>joda-time</groupId>

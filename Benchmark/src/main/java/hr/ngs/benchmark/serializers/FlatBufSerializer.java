@@ -54,22 +54,22 @@ public class FlatBufSerializer implements Serializer {
 		ByteBuffer bb = ByteBuffer.wrap(bytes, 0, length);
 		if (manifest.equals(hr.ngs.benchmark.SmallObjects.Message.class)) {
 			FlatBuf.SmallObjects.Message message = FlatBuf.SmallObjects.Message.getRootAsMessage(bb);
-			return (T) new hr.ngs.benchmark.SmallObjects.Message()
-					.setMessage(message.message())
-					.setVersion(message.version());
+			return (T) new hr.ngs.benchmark.SmallObjects.Message(
+					message.message(),
+					message.version());
 		} else if (manifest.equals(hr.ngs.benchmark.SmallObjects.Complex.class)) {
 			FlatBuf.SmallObjects.Complex c = FlatBuf.SmallObjects.Complex.getRootAsComplex(bb);
-			return (T) new hr.ngs.benchmark.SmallObjects.Complex()
-					.setX(new BigDecimal(c.x()))
-					.setY(c.y())
-					.setZ(c.z());
+			return (T) new hr.ngs.benchmark.SmallObjects.Complex(
+					new BigDecimal(c.x()),
+					c.y(),
+					c.z());
 		} else if (manifest.equals(hr.ngs.benchmark.SmallObjects.Post.class)) {
 			FlatBuf.SmallObjects.Post post = FlatBuf.SmallObjects.Post.getRootAsPost(bb);
-			return (T) new hr.ngs.benchmark.SmallObjects.Post()
-					.setID(UUID.fromString(post.ID()))
-					.setTitle(post.title())
-					.setActive(post.active())
-					.setCreated(new LocalDate(post.created()));
+			return (T) new hr.ngs.benchmark.SmallObjects.Post(
+					UUID.fromString(post.ID()),
+					post.title(),
+					post.active(),
+					new LocalDate(post.created()));
 		}
 		return null;
 	}

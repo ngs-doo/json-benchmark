@@ -1,6 +1,6 @@
-﻿using System;
+﻿using Revenj.Utility;
+using System;
 using System.Diagnostics;
-using Revenj.Utility;
 
 namespace JsonBenchmark
 {

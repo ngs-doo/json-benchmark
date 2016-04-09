@@ -216,7 +216,7 @@ namespace GatherResults
 			var KR = RunSinglePass("Kryo", false, "Kryo", type, both, count);
 			var JG = type != "Large" ? RunSinglePass("Gson", false, "Gson", type, both, count) : EmptyStats;
 			var JB = type == "Small" ? RunSinglePass("Boon", false, "Boon", type, both, count) : EmptyStats;
-			var JA = type == "Small" ? RunSinglePass("Alibaba", false, "Alibaba", type, both, count) : EmptyStats;
+			var JA = type != "Large" ? RunSinglePass("Alibaba", false, "Alibaba", type, both, count) : EmptyStats;
 			return new AggregatePass
 			{
 				Newtonsoft = NJ,

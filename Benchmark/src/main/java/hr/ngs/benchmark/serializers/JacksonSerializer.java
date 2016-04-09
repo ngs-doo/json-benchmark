@@ -19,30 +19,30 @@ public class JacksonSerializer implements Serializer {
 			new SimpleModule()
 					.addSerializer(LocalDate.class, new com.fasterxml.jackson.databind.JsonSerializer<LocalDate>() {
 						@Override
-						public void serialize(LocalDate value, JsonGenerator jg, SerializerProvider _) throws IOException {
+						public void serialize(LocalDate value, JsonGenerator jg, SerializerProvider p) throws IOException {
 							jg.writeString(value.toString());
 						}
 					})
 					.addDeserializer(LocalDate.class, new com.fasterxml.jackson.databind.JsonDeserializer<LocalDate>() {
 						@Override
-						public LocalDate deserialize(JsonParser parser, DeserializationContext _) throws IOException {
+						public LocalDate deserialize(JsonParser parser, DeserializationContext p) throws IOException {
 							return LocalDate.parse(parser.getValueAsString());
 						}
 					})
 					.addSerializer(DateTime.class, new com.fasterxml.jackson.databind.JsonSerializer<DateTime>() {
 						@Override
-						public void serialize(DateTime value, JsonGenerator jg, SerializerProvider _) throws IOException {
+						public void serialize(DateTime value, JsonGenerator jg, SerializerProvider p) throws IOException {
 							jg.writeString(value.toString());
 						}
 					})
 					.addDeserializer(DateTime.class, new com.fasterxml.jackson.databind.JsonDeserializer<DateTime>() {
 						@Override
-						public DateTime deserialize(JsonParser parser, DeserializationContext _) throws IOException {
+						public DateTime deserialize(JsonParser parser, DeserializationContext p) throws IOException {
 							return DateTime.parse(parser.getValueAsString());
 						}
 					});
 
-	final ObjectMapper mapper = new ObjectMapper()
+	private final ObjectMapper mapper = new ObjectMapper()
 			.registerModule(jacksonModule)
 			.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 			.configure(JsonParser.Feature.ALLOW_NON_NUMERIC_NUMBERS, true)

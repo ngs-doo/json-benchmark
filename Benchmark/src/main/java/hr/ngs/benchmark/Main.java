@@ -43,7 +43,7 @@ public class Main {
 	}
 
 	public static void main(String[] args) throws Exception {
-		//args = new String[]{"Kryo", "Small", "Both", "10000000"};
+		//args = new String[]{"Genson", "Small", "Check", "100"};
 		if (args.length != 4) {
 			System.out.printf(
 					"Expected usage: java -jar json-benchamrk.jar (%s) (%s) (%s) n",
@@ -179,7 +179,9 @@ public class Main {
 		incorrect = 0;
 		for (int i = 0; i < repeat; i++) {
 			hr.ngs.benchmark.SmallObjects.Complex complex = new hr.ngs.benchmark.SmallObjects.Complex();
-			complex.setX(BigDecimal.valueOf(i / 1000d)).setY(-i / 1000f).setZ(i);
+			complex.setX(BigDecimal.valueOf(i / 1000d));
+			complex.setY(-i / 1000f);
+			complex.setZ(i);
 			if (type == BenchType.None) continue;
 			stream.reset();
 			serializer.serialize(complex, stream);
