@@ -19,7 +19,7 @@ To give more interesting results, we'll also run tests on Mono to see how it com
 ###Testing assumptions
 
  * .NET: from stream and to stream - we want to avoid LOH issues, so no `byte[]` examples (even if it could be used on small objects) - while we could use `byte[]` pool just for serialization, this bench doesn't currently test for that
- * JVM: from byte[] to OutputStream - while .NET reuses same stream instance, JVM libraries are consuming `byte[]` input and expected to write to the resulting stream (both objects are reused to avoid creating garbage). 
+ * JVM: from `byte[]` to `OutputStream` - while .NET reuses same stream instance, JVM libraries are consuming `byte[]` input and expected to write to the resulting stream (both objects are reused to avoid creating garbage). 
  * single thread testing - tests are run on a single thread in a multi CPU envorionment, which tests the actual serialization algorithms and minimizes the influence of excessive GC which can be processed on other threads
  * simple model - tests actual serialization overhead since there is little serialization to do
  * standard model - non-trivial document model, should represent real world scenarios
@@ -136,7 +136,7 @@ Individual tests can be run as:
 If you are interested in changing the models, then you can:
 
  * install Visual studio plugin: [DDD for DSL](https://visualstudiogallery.msdn.microsoft.com/5b8a140c-5c84-40fc-a551-b255ba7676f4)
- * or use [dsl-clc.jar with compile.bat](Benchmark/compile.bat)
+ * or use [dsl-clc.jar with compile.bat](Benchmark/0-compile-model.bat)
 
 If you want to test other libraries run benchmark without arguments to find out which libraries are available. For example to test Microsoft Bond run: *JsonBenchmark.exe BondBinary Small Both 1000000*.
 
