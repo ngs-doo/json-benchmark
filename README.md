@@ -106,7 +106,7 @@ It's only twice as slow as .NET version.
 
 ###Full results
 
-Intel(R) Core(TM) i5-4440 CPU @ 3.10GHz / 32GB RAM
+AMD Phenom(tm) II X4 955 Processor 3.20 GHz / 24GB RAM
 
 ####2015
 
