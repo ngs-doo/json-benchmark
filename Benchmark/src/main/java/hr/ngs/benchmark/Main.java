@@ -1,13 +1,14 @@
 package hr.ngs.benchmark;
 
 import hr.ngs.benchmark.serializers.*;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
-import org.joda.time.LocalDate;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.time.Clock;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 public class Main {
@@ -196,7 +197,7 @@ public class Main {
 		}
 		reportStats(start, size, incorrect);
 		size = 0;
-		DateTime now = new DateTime(new Date(), DateTimeZone.UTC);
+		OffsetDateTime now = OffsetDateTime.now(Clock.systemUTC());
 		String ld = now.toLocalDate().toString();
 		start = System.nanoTime();
 		incorrect = 0;
@@ -224,7 +225,7 @@ public class Main {
 	private static void testStandard(int repeat, Serializer serializer, BenchType type) throws IOException {
 		int incorrect = 0;
 		ByteStream stream = new ByteStream();
-		DateTime now = new DateTime(new Date(), DateTimeZone.UTC);
+		OffsetDateTime now = OffsetDateTime.now(Clock.systemUTC());
 		LocalDate today = LocalDate.now();
 		UUID[] uuids = new UUID[100];
 		for (int i = 0; i < 100; i++) {
@@ -248,7 +249,7 @@ public class Main {
 					delete.getVersions()[x] = i * x + x;
 			}
 			if (i % 2 == 0 && i % 10 != 0) {
-				delete.setVotes(new ArrayList<Boolean>());
+				delete.setVotes(new ArrayList<>());
 				for (int j = 0; j < i % 10; j++) {
 					delete.getVotes().add((i + j) % 3 == 0 ? Boolean.TRUE : j % 2 == 0 ? Boolean.FALSE : null);
 				}
@@ -272,14 +273,14 @@ public class Main {
 		for (int i = 0; i < repeat; i++) {
 			hr.ngs.benchmark.StandardObjects.Post post = new hr.ngs.benchmark.StandardObjects.Post();
 			post.setID(-i);
-			post.setApproved(i % 2 == 0 ? null : now.plusMillis(i));
+			post.setApproved(i % 2 == 0 ? null : now.plus(i, ChronoUnit.MILLIS));
 			post.setVotes(new hr.ngs.benchmark.StandardObjects.Vote(i / 2, i / 3));
 			post.setText("some text describing post " + i);
 			post.setTitle("post title " + i);
 			post.setState(states[i % 3]);
 			String[] t = tags[i % 3];
-			for (int j = 0; j < t.length; j++) {
-				post.getTags().add(t[j]);
+			for (String aT : t) {
+				post.getTags().add(aT);
 			}
 			post.setCreated(today.plusDays(i));
 			for (int j = 0; j < i % 100; j++) {
@@ -287,7 +288,7 @@ public class Main {
 				comment.setCreated(today.plusDays(i + j));
 				comment.setMessage("comment number " + i + " for " + j);
 				comment.setVotes(new hr.ngs.benchmark.StandardObjects.Vote(j, j * 2));
-				comment.setApproved(j % 3 != 0 ? null : now.plusMillis(i));
+				comment.setApproved(j % 3 != 0 ? null : now.plus(i, ChronoUnit.MILLIS));
 				comment.setUser("some random user " + i);
 				post.getComments().add(comment);
 			}
@@ -308,11 +309,11 @@ public class Main {
 
 	private static void testLarge(int repeat, Serializer serializer, BenchType type) throws IOException {
 		int incorrect = 0;
-		DateTime now = new DateTime(new Date(), DateTimeZone.UTC);
+		OffsetDateTime now = OffsetDateTime.now(Clock.systemUTC());
 		long size = 0;
 		hr.ngs.benchmark.LargeObjects.Genre[] genresEnum = hr.ngs.benchmark.LargeObjects.Genre.values();
 		ByteStream stream = new ByteStream();
-		ArrayList<byte[]> illustrations = new ArrayList<byte[]>();
+		ArrayList<byte[]> illustrations = new ArrayList<>();
 		Random rnd = new Random(1);
 		for (int i = 0; i < 10; i++) {
 			byte[] buf = new byte[256 * i * i * i];

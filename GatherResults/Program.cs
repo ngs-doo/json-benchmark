@@ -1,9 +1,9 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
+using Newtonsoft.Json;
 
 namespace GatherResults
 {
@@ -65,13 +65,13 @@ namespace GatherResults
 			var small10m = RunSmall(repeat, 10000000);
 			RunSinglePass("Warmup .NET", true, "RevenjJsonMinimal", "Standard", null, 1);
 			RunSinglePass("Warmup JVM", false, "DslJsonMinimal", "Standard", null, 1);
+			var std1k = RunStandard(repeat, 1000);
 			var std10k = RunStandard(repeat, 10000);
 			var std100k = RunStandard(repeat, 100000);
-			var std1m = RunStandard(repeat, 1000000);
 			RunSinglePass("Warmup .NET", true, "RevenjJsonMinimal", "Large", null, 1);
 			RunSinglePass("Warmup JVM", false, "DslJsonMinimal", "Large", null, 1);
-			var large100 = RunLarge(repeat, 100);
-			var large1k = RunLarge(repeat, 1000);
+			var large50 = RunLarge(repeat, 50);
+			var large500 = RunLarge(repeat, 500);
 			var outputExcel = RunOnly == null ? "results.xlsx" : RunOnly + ".xlsx";
 			File.Copy("template.xlsx", outputExcel, true);
 			var vm = new ViewModel[]
@@ -87,14 +87,14 @@ namespace GatherResults
 				ViewModel.Create("100.000 SmallObjects.Post", small100k, t => t.Post),
 				ViewModel.Create("1.000.000 SmallObjects.Post", small1m, t => t.Post),
 				ViewModel.Create("10.000.000 SmallObjects.Post", small10m, t => t.Post),
+				ViewModel.Create("1.000 StandardObjects.DeletePost", std1k, t => t.DeletePost),
 				ViewModel.Create("10.000 StandardObjects.DeletePost", std10k, t => t.DeletePost),
 				ViewModel.Create("100.000 StandardObjects.DeletePost", std100k, t => t.DeletePost),
-				ViewModel.Create("1.000.000 StandardObjects.DeletePost", std1m, t => t.DeletePost),
+				ViewModel.Create("1.000 StandardObjects.Post", std1k, t => t.Post),
 				ViewModel.Create("10.000 StandardObjects.Post", std10k, t => t.Post),
 				ViewModel.Create("100.000 StandardObjects.Post", std100k, t => t.Post),
-				ViewModel.Create("1.000.000 StandardObjects.Post", std1m, t => t.Post),
-				new ViewModel("100 LargeObjects.Book", large100),
-				new ViewModel("1.000 LargeObjects.Book", large1k),
+				new ViewModel("50 LargeObjects.Book", large50),
+				new ViewModel("500 LargeObjects.Book", large500),
 			};
 			var json = JsonConvert.SerializeObject(vm);
 			File.WriteAllText(RunOnly == null ? "results.json" : RunOnly + ".json", json);
@@ -204,7 +204,9 @@ namespace GatherResults
 
 		static AggregatePass GetherDuration(string type, bool? both, int count)
 		{
-			var NJ = RunSinglePass("NewtonsoftJson", true, "NewtonsoftJson", type, both, count);
+			var NJ = type != "Large"
+				? RunSinglePass("NewtonsoftJson", true, "NewtonsoftJson", type, both, count)
+				: RunSinglePass("NewtonsoftJson", true, "RevenjNewtonsoftJson", type, both, count);
 			var REV = RunSinglePass("Revenj", true, "RevenjJsonMinimal", type, both, count);
 			//TODO hacks since most libraries fail
 			var SS = type != "Large" ? RunSinglePass("Service Stack", true, "ServiceStack", type, both, count) : EmptyStats;
@@ -255,12 +257,14 @@ namespace GatherResults
 				CreateNoWindow = true
 			};
 			var process = Process.Start(info);
-			process.WaitForExit(5000 + count * 500);
+			process.WaitForExit(10000 + count * 1000);
 			if (both != null) Thread.Sleep(200);//let's wait for cleanup if required
 			if (!process.HasExited)
 			{
 				Console.WriteLine();
 				process.Close();
+				try { process.Kill(); }
+				catch { }
 				Console.WriteLine("Timeout");
 				result.Add(new Stats { Duration = null, Size = null });
 				result.Add(new Stats { Duration = null, Size = null });

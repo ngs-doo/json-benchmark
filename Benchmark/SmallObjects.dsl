@@ -14,7 +14,7 @@
 		date created {
 			//otherwise we will get current date
 			default c# 'System.DateTime.MinValue';
-			default Java 'com.dslplatform.json.JodaTimeConverter.MIN_LOCAL_DATE';
+			default Java 'com.dslplatform.json.JavaTimeConverter.MIN_LOCAL_DATE';
 		}
 	}
 	value Complex {

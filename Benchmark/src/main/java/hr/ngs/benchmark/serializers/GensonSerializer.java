@@ -3,10 +3,8 @@ package hr.ngs.benchmark.serializers;
 import com.dslplatform.json.JsonObject;
 import com.owlike.genson.Genson;
 import com.owlike.genson.GensonBuilder;
-import com.owlike.genson.ext.jodatime.JodaTimeBundle;
 import hr.ngs.benchmark.Serializer;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
@@ -14,7 +12,6 @@ import java.nio.charset.Charset;
 public class GensonSerializer implements Serializer {
 	private final Genson genson = new GensonBuilder()
 			.useDateAsTimestamp(false)
-			.withBundle(new JodaTimeBundle())
 			.create();
 	private final static Charset UTF8 = Charset.forName("UTF-8");
 

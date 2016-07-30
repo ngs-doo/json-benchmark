@@ -1,13 +1,9 @@
 package hr.ngs.benchmark.serializers;
 
 import de.javakaffee.kryoserializers.UUIDSerializer;
-import de.javakaffee.kryoserializers.jodatime.JodaDateTimeSerializer;
-import de.javakaffee.kryoserializers.jodatime.JodaLocalDateSerializer;
 
 import com.dslplatform.json.JsonObject;
 import hr.ngs.benchmark.Serializer;
-import org.joda.time.DateTime;
-import org.joda.time.LocalDate;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -21,8 +17,6 @@ public class KryoSerializer implements Serializer {
 
 	public KryoSerializer() {
 		kryo.setReferences(false);
-		kryo.register(DateTime.class, new JodaDateTimeSerializer());
-		kryo.register(LocalDate.class, new JodaLocalDateSerializer());
 		kryo.register(UUID.class, new UUIDSerializer());
 	}
 

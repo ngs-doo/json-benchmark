@@ -2,18 +2,17 @@ package hr.ngs.benchmark.serializers;
 
 import com.dslplatform.json.JsonObject;
 import hr.ngs.benchmark.Serializer;
-import io.advantageous.boon.json.JsonFactory;
-import io.advantageous.boon.json.JsonSerializerFactory;
+import io.advantageous.boon.json.*;
 import io.advantageous.boon.json.serializers.CustomObjectSerializer;
 import io.advantageous.boon.json.serializers.JsonSerializerInternal;
 import io.advantageous.boon.primitive.CharBuf;
-import org.joda.time.DateTime;
-import org.joda.time.LocalDate;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
 
 public class BoonSerializer implements Serializer {
 	private final static Charset UTF8 = Charset.forName("UTF-8");
@@ -33,7 +32,7 @@ public class BoonSerializer implements Serializer {
 	private static class BoonDateTimeSerializer implements CustomObjectSerializer {
 		@Override
 		public Class type() {
-			return DateTime.class;
+			return OffsetDateTime.class;
 		}
 
 		@Override
@@ -42,11 +41,11 @@ public class BoonSerializer implements Serializer {
 		}
 	}
 
-	private final io.advantageous.boon.json.JsonSerializer serializer = new JsonSerializerFactory()
+	private final JsonSerializer serializer = new JsonSerializerFactory()
 			.addTypeSerializer(LocalDate.class, new BoonLocalDateSerializer())
-			.addTypeSerializer(DateTime.class, new BoonDateTimeSerializer())
+			.addTypeSerializer(OffsetDateTime.class, new BoonDateTimeSerializer())
 			.create();
-	private final io.advantageous.boon.json.ObjectMapper mapper = JsonFactory.create();
+	private final ObjectMapper mapper = JsonFactory.create();
 	private final CharBuf cb = CharBuf.createCharBuf();
 
 	@Override

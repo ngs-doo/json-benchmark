@@ -24,7 +24,7 @@ To give more interesting results, we'll also run tests on Mono to see how it com
  * simple model - tests actual serialization overhead since there is little serialization to do
  * standard model - non-trivial document model, should represent real world scenarios
  * large model - big documents - tests should be bound by non-infrastructure parts and stress underlying platform/serialization algorithms
- * almost default configuration - large model contains "advanced" features, such as interface serialization. JVM libraries require extension for Joda Time. Some libraries don't support extensions ;(
+ * almost default configuration - large model contains "advanced" features, such as interface serialization.
  * one test at a time - perform one test and exit - while this will nullify JVM optimizations in runtime, they should show up in tests with larger number of loops.
  * track duration of creating new object instance
  * some other libraries are available for testing, but not included in results (fastJSON, Genson, Microsoft Bond, FST, ...)
@@ -32,16 +32,16 @@ To give more interesting results, we'll also run tests on Mono to see how it com
 
 ###Libraries
 
- * **Newtonsoft.Json 8.0.3** - "Popular high-performance JSON framework for .NET"
- * **Revenj.Json 1.3.0** - Part of Revenj framework. POCO + serialization/deserialization methods 
- * **Service Stack 4.0.54** - ".NET's fastest JSON Serializer"
- * **Jil 2.10.0** - "aims to be the fastest general purpose JSON (de)serializer for .NET"
+ * **Newtonsoft.Json 9.0.1** - "Popular high-performance JSON framework for .NET"
+ * **Revenj.Json 1.3.1** - Part of Revenj framework. POCO + serialization/deserialization methods 
+ * **Service Stack 4.0.60** - ".NET's fastest JSON Serializer"
+ * **Jil 2.14.3** - "aims to be the fastest general purpose JSON (de)serializer for .NET"
  * **NetJSON 1.1.0** - "Faster than Any Binary?"
- * **Jackson 2.7.3** - "aims to be the best possible combination of fast, correct, lightweight, and ergonomic for developers"
- * **DSL-JSON 0.9.7** - DSL Platform compatibile Java library. POJO + serialization/deserialization methods
- * **Boon 0.5.6** - "Boon is the probably the fastest way to serialize and parse JSON in Java so far for your project"
- * **Alibaba/fastjson 1.2.8** - "measured to be faster than any other Java parser and databinder, includes jackson"
- * **Gson 2.6.2** - "Gson is a Java library that can be used to convert Java Objects into their JSON representation"
+ * **Jackson 2.8.1** - "aims to be the best possible combination of fast, correct, lightweight, and ergonomic for developers"
+ * **DSL-JSON 1.1.2** - DSL Platform compatibile Java library. POJO + serialization/deserialization methods
+ * **Boon 0.6.6** - "Boon is the probably the fastest way to serialize and parse JSON in Java so far for your project"
+ * **Alibaba/fastjson 1.2.12** - "measured to be faster than any other Java parser and databinder, includes jackson"
+ * **Gson 2.7** - "Gson is a Java library that can be used to convert Java Objects into their JSON representation"
 
  
 ###Startup times
@@ -51,7 +51,7 @@ Let's see how much of an issue that is:
 
     Small 1 (Message)
 
-![Startup times](results/startup-small-2016.png)
+![Startup times](results/startup-small-2016-7.png)
 
 As expected baked in serialization code has minimal startup time, since it was amortized at compile time. 
 While this can be nullified on servers with longer startup, it can cause noticeable delays on mobile apps. 
@@ -59,42 +59,36 @@ Java seems to be doing exceptionally well on startup times.
 
 ###Small model
 
-Most libraries optimize for small JSON payload, both with data structures and algorithms. 
-These tests are usually infrastructure bound.
+Model with only a few simple properties. This test mostly shows the overhead of the library since there is only little serialization to do.
 
     Small 1.000.000 (Message)
 
-![Small objects duration](results/small-objects-2016.png)
+![Small objects duration](results/small-objects-2016-7.png)
 
 Since there is large number of loops JVM optimization kicks-in so it's interesting to compare it to both smaller number of loops (100k) and larger number of loops (10M).
 
 ###Non-trivial model
 
-Non-trivial model should reflect most CRUD scenarios with documents. 
-This example uses only several data types but it shows very interesting difference between .NET and JVM.
+Non-trivial model should reflect most CRUD scenarios with documents. Serialization algorithms should show difference between libraries.
 
     Standard 100.000 (Post)
 
-![Non-trivial objects duration](results/standard-post-2016.png)
+![Non-trivial objects duration](results/standard-post-2016-7.png)
 
-Even on smaller number of runs, .NET is not faster anymore. 
-LOH issue in .NET prohibits advanced optimizations available on JVM. 
-Few libraries stop working on non-trivial stuff. 
+LOH issue in .NET prohibits advanced optimizations available on JVM (in a sense that developers are forced to deal with it, instead of focusing on algorithms).
 
 ###Large model
 
 Large model contains several advanced features, such as interface serialization, occasional byte[] serialization and deep nested objects. 
 Large strings and other objects are used which cause 10x slower instance creation in .NET.
 
-    Large 1.000 (Book)
+    Large 500 (Book)
 
-![Large objects duration](results/large-1000-2016.png)
+![Large objects duration](results/large-500-2016-7.png)
 
-Results seem to be consistent regardless of the number of loops. 
-Revenj manages to match Jackson speed. 
-Most libraries are unable to complete this bench (Jackson gets some help through annotations).
+Most libraries are unable to complete this bench (due to requirement for advanced features; Jackson gets some help through annotations).
 
-###Mono comparison
+###Mono comparison (results for 2016/4)
 
 Mono has improved significantly with v4. 
 
@@ -106,9 +100,9 @@ It's only twice as slow as .NET version.
 
 ###Full results
 
-AMD Phenom(tm) II X4 955 Processor 3.20 GHz / 24GB RAM
+####2015/6
 
-####2015
+AMD Phenom(tm) II X4 955 Processor 3.20 GHz / 24GB RAM
 
 .NET 4.5.1, Mono 4.0.1, JVM 1.7.76/1.8.31
 
@@ -116,13 +110,23 @@ Results for [Windows](results/results-windows-2015.xlsx).
 Results for [Linux](results/results-linux-2015.xlsx).
 .NET vs Mono [comparison](results/result-dotnet-vs-mono-2015.xlsx).
 
-####2016
+####2016/4
+
+AMD Phenom(tm) II X4 955 Processor 3.20 GHz / 24GB RAM
 
 .NET 4.6.2, Mono 4.2.3, JVM 1.8.77
 
 Results for [Windows](results/results-windows-2016.xlsx).
 Results for [Linux](results/results-linux-2016.xlsx).
 .NET vs Mono [comparison](results/result-dotnet-vs-mono-2016.xlsx).
+
+####2016/7
+
+Intel(R) Core(TM) i5-2520M CPU @ 2.50GHz / 16GB RAM
+
+.NET 4.6.2, JVM 1.8.102
+
+Results for [Windows](results/results-windows-2016-7.xlsx).
 
 ###Reproducing results
 
@@ -145,8 +149,8 @@ To check if library is working correctly, use **Check** argument. Some libraries
 ###Conclusions
 
 * JVM seems to always be faster after optimization kicks-in
-* LOH design issue prevents .NET to match JVM in speed
+* LOH design issue forces .NET libraries to use suboptimal algorithms
 * Newtonsoft is comparable with Jackson on features/quality but not in speed
-* .NET libraries have matured over time
-* Almost everyone claims to be THE FASTEST 
+* .NET libraries have matured over time (although most of them still have various issues)
+* Almost everyone claims to be THE FASTEST
 * JSON can compete with binary codecs in speed

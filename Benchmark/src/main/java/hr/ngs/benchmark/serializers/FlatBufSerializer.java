@@ -3,12 +3,12 @@ package hr.ngs.benchmark.serializers;
 import com.dslplatform.json.JsonObject;
 import com.google.flatbuffers.FlatBufferBuilder;
 import hr.ngs.benchmark.Serializer;
-import org.joda.time.LocalDate;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
+import java.time.LocalDate;
 import java.util.UUID;
 
 public class FlatBufSerializer implements Serializer {
@@ -38,7 +38,7 @@ public class FlatBufSerializer implements Serializer {
 					fbb.createString(post.getID().toString()),
 					fbb.createString(post.getTitle()),
 					post.getActive(),
-					post.getCreated().toDate().getTime());
+					post.getCreated().toEpochDay());
 			FlatBuf.SmallObjects.Post.finishPostBuffer(fbb, offset);
 		} else {
 			throw new IOException("Unknown target");
@@ -69,7 +69,7 @@ public class FlatBufSerializer implements Serializer {
 					UUID.fromString(post.ID()),
 					post.title(),
 					post.active(),
-					new LocalDate(post.created()));
+					LocalDate.ofEpochDay(post.created()));
 		}
 		return null;
 	}
