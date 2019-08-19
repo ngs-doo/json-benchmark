@@ -10,7 +10,7 @@ namespace JsonBenchmark
 		{
 			RevenjNewtonsoftJson, RevenjJsonFull, RevenjJsonMinimal,
 			NewtonsoftJson, Jil, fastJSON, ServiceStack, BondJson, NetJSON,
-			ProtoBuf, BondBinary,
+			ProtoBuf, BondBinary, Utf8Json
 		}
 
 		enum BenchSize
@@ -91,7 +91,10 @@ namespace JsonBenchmark
 				case BenchTarget.NetJSON:
 					LibrarySetup.SetupNetJSON(out serialize, out deserialize);
 					break;
-				case BenchTarget.ProtoBuf:
+                case BenchTarget.Utf8Json:
+                    LibrarySetup.SetupUtf8Json(out serialize, out deserialize);
+                    break;
+                case BenchTarget.ProtoBuf:
 					LibrarySetup.SetupProtobuf(out serialize, out deserialize);
 					break;
 				case BenchTarget.RevenjJsonFull:
