@@ -53,7 +53,13 @@ namespace JsonBenchmark
 			deserialize = (stream, type) => serializer.Deserialize(new Newtonsoft.Json.JsonTextReader(stream.GetReader()), type);
 		}
 
-		public static void SetupProtobuf(
+        public static void SetupUtf8Json(out Action<object, ChunkedMemoryStream> serialize, out Func<ChunkedMemoryStream, Type, object> deserialize)
+        {
+            serialize = (obj, stream) => Utf8Json.JsonSerializer.Serialize(stream, obj);
+            deserialize = (stream, type) => Utf8Json.JsonSerializer.NonGeneric.Deserialize(type, stream);
+        }
+
+        public static void SetupProtobuf(
 			out Action<object, ChunkedMemoryStream> serialize,
 			out Func<ChunkedMemoryStream, Type, object> deserialize)
 		{

@@ -36,3 +36,4 @@ Dotfuscated/
 *.iml
 
 target
+/Benchmark/.vs/JsonBenchmark/v16/Server/sqlite3
